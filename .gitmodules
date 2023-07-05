@@ -1,0 +1,3 @@
+[submodule "data/KPI-Anomaly-Detection"]
+	path = data/KPI-Anomaly-Detection
+	url = https://github.com/NetManAIOps/KPI-Anomaly-Detection
