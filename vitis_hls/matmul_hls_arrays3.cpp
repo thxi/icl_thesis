@@ -18,17 +18,21 @@ int query_matrix[S1 * S2] = {0,  1,  2,  3,  4,  5,  6,  7,  8,  9,
 
 // it is multiplied by the query matrix
 void toplevelmatmul(const int* in_mat, volatile int* result) {
-#pragma HLS INTERFACE m_axi port = in_mat offset = slave
-#pragma HLS INTERFACE m_axi port = result offset = slave
+#pragma HLS INTERFACE m_axi port = in_mat offset = slave bundle = axi_ports
+#pragma HLS INTERFACE m_axi port = result offset = slave bundle = axi_ports
 #pragma HLS INTERFACE s_axilite port = return
 
-  int buff[S1 * S3];
+  int buff[S1 * S3];  // for result
+  int B[S2 * S3];     // for in_mat
+  memcpy(B, (const int*)in_mat, S2 * S3 * sizeof(int));
+
   // multiply query_matrix by in_mat and write to result
-  for (int i = 1; i < S1; i++) {
+  for (int i = 0; i < S1; i++) {
     for (int j = 0; j < S3; j++) {
+#pragma HLS PIPELINE II = 2
       int sum = 0;
       for (int k = 0; k < S2; k++) {
-        sum += query_matrix[i * S2 + k] * in_mat[k * S3 + j];
+        sum += query_matrix[i * S2 + k] * B[k * S3 + j];
       }
       buff[i * S3 + j] = sum;
     }
