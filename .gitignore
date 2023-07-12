@@ -20,3 +20,9 @@ cython_debug/
 
 # random cpp stuff
 a.out
+
+# Macos
+.DS_Store
+
+# Big Data
+data/HFT
