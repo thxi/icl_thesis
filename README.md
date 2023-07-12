@@ -67,6 +67,8 @@ Evaluate GPU implementation
 
 ## How to create design
 
+Same guide: https://xilinx.github.io/Embedded-Design-Tutorials/docs-jp/2021.2/build/html/docs/Introduction/Zynq7000-EDT/2-using-zynq.html
+
 A+B hello world: https://www.youtube.com/watch?v=2ErFDGSv5EE
 
 - create a custom IP in HLS in Vitis HLS (part name is xc7z020clg400-1)
@@ -75,7 +77,7 @@ A+B hello world: https://www.youtube.com/watch?v=2ErFDGSv5EE
 - create design -> add zynq PS -> run block automation
 - tools -> settings -> change IP repo
 - add custom ip (change name of the ip) -> run connection automation. -> save block design
-- create wrapper for the block -> generate bitstream -> export block design to tcl (rename) and also get .hwh from .gen/hw_handoff and .bit from .runs
+- create HDL wrapper for the block in sources -> generate bitstream -> export block design to tcl (rename) and also get .hwh from .gen/hw_handoff and .bit from .runs
 - move the 3 files to pynq/overlays/something_name
 
 sample script:

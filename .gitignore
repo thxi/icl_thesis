@@ -16,3 +16,7 @@ __pycache__/
 
 # Cython debug symbols
 cython_debug/
+
+
+# random cpp stuff
+a.out
