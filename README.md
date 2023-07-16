@@ -159,3 +159,21 @@ out_buffer.close()
 ```
 
 Sigmoid function: https://github.com/fastmachinelearning/hls4ml/blob/main/hls4ml/templates/vivado/nnet_utils/nnet_activation.h
+
+## HLS
+
+avoid strange include bug: https://support.xilinx.com/s/question/0D52E00006iHkfpSAC/vivado-20153-hls-bug-gmph?language=en_US
+
+add:
+
+```c++
+#include "/tools/Xilinx/Vitis_HLS/2022.1/include/gmp.h"
+```
+
+and https://github.com/fastmachinelearning/hls4ml/issues/473
+
+```sh
+grep -R "#include <gmp.h>" /tools/Xilinx/Vitis_HLS/2022.1/include/
+```
+
+and replace gmp.h brackets

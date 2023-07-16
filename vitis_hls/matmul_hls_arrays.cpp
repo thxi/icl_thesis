@@ -24,11 +24,15 @@ void toplevelmatmul(const int* in_mat, int* result) {
 #pragma HLS INTERFACE s_axilite port = result bundle = control
 #pragma HLS INTERFACE s_axilite port = return
 
-  // multiply query_matrix by in_mat and write to result
+// multiply query_matrix by in_mat and write to result
+loop1:
   for (int i = 1; i < S1; i++) {
+  loop2:
     for (int j = 0; j < S3; j++) {
       int sum = 0;
+    loop3:
       for (int k = 0; k < S2; k++) {
+#pragma HLS pipeline off
         sum += query_matrix[i * S2 + k] * in_mat[k * S3 + j];
       }
       result[i * S3 + j] = sum;
