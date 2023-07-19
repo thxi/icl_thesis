@@ -6,6 +6,7 @@ void mul_mat_vec(T *in_mat, T *in_vec, T *result) {
   for (int i = 0; i < T1; i++) {
     T sum = 0;
     for (int j = 0; j < T2; j++) {
+#pragma HLS pipeline off
       sum += in_mat[i * T2 + j] * in_vec[j];
     }
     result[i] = sum;
