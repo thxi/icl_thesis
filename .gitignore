@@ -17,9 +17,37 @@ __pycache__/
 # Cython debug symbols
 cython_debug/
 
+### LaTeX ###
+## Core latex/pdflatex auxiliary files:
+*.aux
+*.lof
+*.log
+*.lot
+*.fls
+*.out
+*.toc
+*.fmt
+*.fot
+*.cb
+*.cb2
+.*.lb
 
-# random cpp stuff
-a.out
+## Bibliography auxiliary files (bibtex/biblatex/biber):
+*.bbl
+*.bcf
+*.blg
+*-blx.aux
+*-blx.bib
+*.run.xml
+
+## Build tool auxiliary files:
+*.fdb_latexmk
+*.synctex
+*.synctex(busy)
+*.synctex.gz
+*.synctex.gz(busy)
+*.pdfsync
+
 
 # Macos
 .DS_Store
@@ -30,3 +58,6 @@ data/HFT
 # random
 _thesis_draft.tex
 reading
+
+# random cpp stuff
+a.out

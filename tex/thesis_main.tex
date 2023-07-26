@@ -1,0 +1,336 @@
+\documentclass[a4paper, twoside]{report}
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%%%%%%%%%%%% IMPORT PACKAGES %%%%%%%%%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\usepackage[hidelinks]{hyperref}
+\usepackage{subfigure}
+\usepackage{fancyvrb}
+\usepackage{amsmath, amsfonts, amsthm, amssymb}
+\usepackage{stmaryrd}
+\usepackage{verbatim}
+\usepackage{graphicx}
+\usepackage{setspace}
+\usepackage[ruled, vlined]{algorithm2e}
+\graphicspath{{Figures/}}
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%5
+\usepackage{listings}
+\usepackage{xcolor}
+\definecolor{codegreen}{rgb}{0,0.6,0}
+\definecolor{codegray}{rgb}{0.5,0.5,0.5}
+\definecolor{codepurple}{rgb}{0.58,0,0.82}
+\definecolor{backcolour}{rgb}{0.95,0.95,0.92}
+
+\lstdefinestyle{mystyle}{
+    backgroundcolor=\color{backcolour},   
+    commentstyle=\color{codegreen},
+    keywordstyle=\color{magenta},
+    numberstyle=\tiny\color{codegray},
+    stringstyle=\color{codepurple},
+    basicstyle=\ttfamily\footnotesize,
+    breakatwhitespace=false,         
+    breaklines=true,                 
+    captionpos=b,                    
+    keepspaces=true,                 
+    numbers=left,                    
+    numbersep=5pt,                  
+    showspaces=false,                
+    showstringspaces=false,
+    showtabs=false,                  
+    tabsize=2
+}
+\lstset{style=mystyle}
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%%%%%%%%%%%%%%%%%%%%%%%%
+\newtheorem{theorem}{Theorem}[section]
+\newtheorem{exa}{Example}[section]
+\newtheorem{corollary}[theorem]{Corollary}
+\newtheorem{lemma}[theorem]{Lemma}
+\newtheorem{proposition}[theorem]{Proposition}
+
+\theoremstyle{definition}
+\newtheorem{definition}[theorem]{Definition}
+\newtheorem{remark}[theorem]{Remark}
+\newtheorem{notation}[theorem]{Notation}
+\newtheorem{assumption}[theorem]{Assumption}
+\newtheorem{conjecture}[theorem]{Conjecture}
+
+\newcommand{\ind}{1\hspace{-2.1mm}{1}} %Indicator Function
+\newcommand{\I}{\mathtt{i}}
+\newcommand{\D}{\mathrm{d}}
+\newcommand{\E}{\mathrm{e}}
+\newcommand{\RR}{\mathbb{R}}
+\newcommand{\sgn}{\mathrm{sgn}}
+\newcommand{\atanh}{\mathrm{arctanh}}
+\def\equalDistrib{\,{\buildrel \Delta \over =}\,}
+\numberwithin{equation}{section}
+
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%% Sets page size and margins
+\usepackage[a4paper,top=3cm,bottom=2cm,left=3cm,right=3cm,marginparwidth=1.75cm]{geometry}
+\title{Solving the Collatz conjecture}
+\author{Ilia Sobakinskikh  (CID: 00000000)}
+
+\begin{document}
+\input{title}
+
+\mbox{}\newline\vspace{10mm} \mbox{}\LARGE
+%
+{\bf Declaration} \normalsize \vspace{5mm}
+
+The work contained in this thesis is my own work unless otherwise stated.
+
+\newpage
+
+\renewcommand{\abstractname}{Acknowledgements}
+\begin{abstract}
+    This is where you usually thank people who have provided useful assistance, feedback,...., during your project.
+\end{abstract}
+
+\newpage
+
+\renewcommand{\abstractname}{Abstract}
+\begin{abstract}
+    The abstract is a short summary of the thesis' contents.
+    It should be about half a page long and be accessible by someone not familiar with the project.
+    The goal of the abstract is also to tease the reader and make him want to read the whole thesis.
+\end{abstract}
+
+\tableofcontents
+\listoffigures
+\listoftables
+
+
+
+
+
+
+% %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+% \begin{remark}
+% Please bear in mind the following when writing your thesis (or anything for that matter):
+% you are not writing for you. You are writing for an audience, who will (have to) read your work.
+% Please be considerate, and explain everything clearly. 
+% In this case, the audience could be your fellow MSc students, 
+% with some general knowledge of the area, but maybe not specialised to your particular topic.
+% \end{remark}
+
+
+% \newpage
+% %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+% \chapter{How to write mathematics}\label{sec:HowTo}
+% In this section, we show some examples of properly written mathematical expressions and sentences.
+% In the header of your thesis, you can define \LaTeX \ shortcuts to write more quickly.
+
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\chapter*{Introduction}
+
+% The introduction is one of the most important components of the thesis.
+% It should be readable by anyone, 
+% including people without prior knowledge of the field.
+% It should progressively introduce the main topic of the paper, and explain the structure of the thesis.
+% In Section~\ref{sec:HowTo}, we shall provide several examples of clearly written examples,
+% whereas Section~\ref{sec:WhatNotToDo} will gather a certain number of common mistakes and errors.
+
+In this thesis, we explore how the inference time of a Transformer Neural Network can be efficiently optimized with applications to real-time anomaly detection in financial time series.
+The financial time series are price series such as asset prices.
+Unfortunately, the data is often with errors or outliers that make the downstream data processing tasks useless, unstable or even harmful \cite{Falkenberry_2008} \cite{Vallis_Hochenbaum_Twitter}. Moreover, the amount of financial time-series data has been significantly increasing \cite{AnomalyDataBig}.
+Hence, there is a need for better data-cleaning methods in terms of accuracy and in terms of processing speed.
+
+Transformers as a neural network architecture have achieved superior performances in many tasks such as Natural Language Processing and Computer Vision \cite{TransformersNLP}.
+Time series modelling and especially anomaly detection tasks can benefit from the features of transformers architecture in multiple ways, including the capacity to capture long-range dependencies and interactions \cite{2202.07125}.
+
+Increasingly powerful hardware, such as field-programmable gate arrays (FPGAs), have seen increasing usage in recent years due to their reconfigurability and high performance \cite{10.1007/978-3-319-56258-2_14}.
+
+We explore different Transformer architectures for time series modelling and how they can be efficiently implemented on an FPGA board (PYNQ-Z2).
+In particular, we examine the application of Transformers to detect anomalies in time series and we show how they can be efficiently implemented on an FPGA board to minimize latency or to maximize throughput.
+
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\chapter{Methodology}
+
+In this chapter, we will describe the main concepts and ideas used in this work.
+
+
+\section{Problem Formulation}
+
+We consider a multivariate time-series, which is a timestamped
+sequence of observations/datapoints.
+
+The \textbf{Anomaly Detection} task: given a training input time-series T, for any
+unseen test time-series $\hat{T}$ of length $n$, we need to predict $Y = \{y_1, . . . , y_n \}$, where we use
+$y_t \in \{0, 1\}$ to denote whether the datapoint at the $t$-th timestamp
+of the test set is anomalous (1 denotes an anomalous datapoint).
+
+
+\subsection{Transformers}
+
+
+\subsubsection{Vanilla Attention layer}
+
+% cite that attention layer is not a new idea and scaled dot product attention
+% is the one which got popular: https://github.com/sooftware/attentions
+
+% TODO: describe the main 2017 architecture, the self-attention mechanism, why it is useful for anomaly detection
+
+% describe the main architecture:
+% https://uvadlc-notebooks.readthedocs.io/en/latest/tutorial_notebooks/tutorial6/Transformers_and_MHAttention.html
+% http://nlp.seas.harvard.edu/annotated-transformer/
+% https://peterbloem.nl/blog/transformers
+
+
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\section{FPGA design}
+
+% Main xilinx docs:
+% https://docs.xilinx.com/r/en-US/ug1399-vitis-hls/Summary?tocId=xCTL3tR5AjP_FFYmRfl81Q
+
+In this section, the main design principles of programming an FPGA board will be described. Readers will be introduced to the common optimization techniques and how they are achieved. The FPGA programming will be done using C++ HLS which is converted to verilog code.
+
+\subsection{Introduction to FPGA}
+
+% TODO: chatGPT
+The progress of hardware acceleration devices like field-programmable gate arrays (FPGAs) enables the achievement of high component density and low power consumption, all the while minimizing latency \cite{10.1007/978-3-319-56258-2_14}. They are commonly used to accelerate high-performance, computationally intensive systems (for example, data centers) or to minimize the latency of execution (for example, in high-frequency trading).
+
+\subsection{FPGA development and HLS}
+
+\subsubsection{Common Terms}
+
+% good guide:
+% https://wiki.york.ac.uk/display/RTS/Vitis+HLS+Knowledge+Base
+
+
+\subsubsection{Simulation, Cosimulation}
+
+% TODO
+A way to design and debug the solution without running it on the board.
+
+\subsubsection{HLS synthesis}
+
+In this section, HLS synthesis will be described ~\cite{AMD2023VitisHLS}. It is now the common workflow in the FPGA development because it significantly improves the productivity when working with design.
+
+
+\subsection{Common optimizations}
+
+In this section, common optimization techniques and how they are achieved will be introduced.
+
+% good description of 
+% https://docs.xilinx.com/r/en-US/ug1399-vitis-hls/Loops-Primer
+
+
+\subsubsection{Pipelining}
+
+% TODO:
+
+Example code:
+\begin{lstlisting}[language=c++,numbers=none]
+void toplevel(din_t* a, din_t* b, dout_t* c, int len) {
+	vadd: for(int i = 0; i < len; i++) {
+#pragma HLS PIPELINE
+	   c[i] = a[i] + b[i];
+	}
+}
+\end{lstlisting}
+
+\subsubsection{Loop Unrolling}
+
+
+\subsubsection{Arrays}
+% https://docs.xilinx.com/r/en-US/ug1399-vitis-hls/Arrays-Primer
+% https://docs.xilinx.com/r/en-US/ug1399-vitis-hls/Array-Accesses-and-Performance
+
+TODO: Partitioning
+
+\subsubsection{Streams}
+
+TODO:
+
+% https://docs.xilinx.com/r/en-US/ug1399-vitis-hls/Arrays-on-the-Interface
+
+% https://docs.xilinx.com/r/en-US/ug1399-vitis-hls/Memory-Mapped-Interface
+
+% https://docs.xilinx.com/r/en-US/ug1399-vitis-hls/Optimizing-AXI-System-Performance
+
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\chapter{Experiments}
+
+\section{Datasets}
+
+In this section, the datasets used for evaluation will be described.
+
+\subsection{Numenta Anomaly Benchmark (NAB)}
+To assess the accuracy of predictions, we use the Numenta Anomaly Benchmark ~\cite{Ahmad2017Unsupervised} dataset, which contains various real-world time series of temperature sensor readings, CPU utilization of cloud machines, service request latencies, and taxi demands in New York City. It is commonly used to assess the performance of anomaly detection models on time-series data.
+
+\subsection{FI2010}
+
+In \cite{1705.03233}, authors described the first publicly available benchmark dataset of high-frequency limit order markets for mid-price prediction.
+The dataset contains 10-day limit order book data from June 2010 for five stocks that are listed on the Helsinki exchange. Each entry in the time series provides price details and aggregate order sizes for the top ten levels on both the bid and offer sides of the market, totaling forty data points. The time series consists of approximately four million messages, representing incoming buy/sell orders or cancellations. the dataset features order book snapshots taken after every 10 messages, resulting in approximately 400,000 records for the five stocks.
+
+A number of versions of the dataset are available using different normalization schemes. We used the not normalized version of the dataset.
+
+For the purpose of this work, we only extract only the mid price from the dataset which will be used for anomaly detection task.
+
+
+\subsubsection{Synthetic outliers}
+
+Since the dataset is not labeled, we have to inject synthetic anomalies into the dataset.
+We employ the approach similar to \cite{Crepey2022Anomaly} with a slight modification.
+The algorithm can be summarized as follows:
+\begin{enumerate}
+    \item Select $n$ samples from the time series which will be contaminated (i.e., anomalous)
+    \item Replace the sample $S_i$ with $\hat{S}_i=S_i(1+\delta)$ where $\delta$ is the injected outlier in the return space.
+\end{enumerate}
+
+Authors model $\delta$ as a uniformly distributed random variable $\mathcal{U}[0, \rho]$. We instead use the normal distribution with matching mean and standard deviation of the returns time series.
+
+\section{Accuracy}
+
+
+\section{Performance/Speed}
+
+% https://xilinx.github.io/Vitis-Tutorials/2021-2/build/html/docs/Getting_Started/Vitis_HLS/dataflow_design.html
+
+% why pynq has additional latency
+% https://discuss.pynq.io/t/execution-time-in-pynq-z2/2833
+% https://discuss.pynq.io/t/execution-time-calculation/1959
+% In pipeline designs there are two key concepts
+% Initiation Interval (II), the number of clock cycles between the start times of consecutive loop iterations, ideally this should be 1
+% Latency, the time it takes to get an output since the input was fed
+
+
+
+\section{Resource utilization on FPGA}
+
+
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\newpage
+\chapter*{Conclusion}
+
+\section{Future work}
+Bigger FPGA boards.
+
+Evaluation of performance on more recent financial market data.
+
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\newpage
+\appendix
+\chapter{Code}
+\section{Efficient matrix multiplication}\label{app:Appendix}
+This is Appendix~\ref{app:Appendix}, which usually contained supporting material,
+or complicated proofs that might make the main text above less readable / fluid.
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\bibliographystyle{unsrt}
+\bibliography{biblio}
+\addcontentsline{toc}{chapter}{Bibliography}
+
+\end{document}
