@@ -153,34 +153,148 @@ In particular, we examine the application of Transformers to detect anomalies in
 \chapter{Methodology}
 
 In this chapter, we will describe the main concepts and ideas used in this work.
+The reader will be introduced to the main concepts of the Transformer architecture and how it can be used for anomaly detection in time series.
+Finally, the main concepts of programming an FPGA will be introduced and the specific optimizations that can be applied to speed up the computations.
 
 
 \section{Problem Formulation}
 
-We consider a multivariate time-series, which is a timestamped
-sequence of observations/datapoints.
 
-The \textbf{Anomaly Detection} task: given a training input time-series T, for any
-unseen test time-series $\hat{T}$ of length $n$, we need to predict $Y = \{y_1, . . . , y_n \}$, where we use
-$y_t \in \{0, 1\}$ to denote whether the datapoint at the $t$-th timestamp
-of the test set is anomalous (1 denotes an anomalous datapoint).
+\begin{definition}
+    We consider a \textbf{time-series} $\mathcal{T}$ which is simply a timestamped sequence of observations $x_i \in R^n$.
+\end{definition}
+\begin{remark}
+    Most of the times we will consider univariate case, i.e. $n=1$.
+    An example of this is a price time-series of a single stock.
+    However, the multivariate case is also important and we will consider it in the experiments.
+    For example, one can consider a time-series of prices of multiple stocks to get a multivariate time series.
+\end{remark}
 
 
-\subsection{Transformers}
+\begin{definition}
+    The \textbf{Anomaly Detection} task:
+    for any time-series $\hat{\mathcal{T}}$ of length $n$, we need to predict $\mathcal{Y} = \{y_1, . . . , y_n \}, y_i \in \{0, 1\}$,
+    whether the datapoint at the $i$-th timestamp anomalous (where by convention we will use $1$ as anomaly and $0$ as not an anomaly).
+\end{definition}
+In this work, we will restrict ourselves to the \textbf{supervised case}
+where the labels $y_i$ are known for the \emph{seen} (or training) part of the dataset.
+
+\begin{remark}
+    One can also consider an unsupervised task.
+    However, one issue with the unsupervised task is that it is hard to evaluate
+    the performance (i.e., accuracy) of the model's predictions \cite{1905.05667}.
+\end{remark}
 
 
-\subsubsection{Vanilla Attention layer}
+\section{Transformers}
 
-% cite that attention layer is not a new idea and scaled dot product attention
-% is the one which got popular: https://github.com/sooftware/attentions
+In this section, we will describe the main concepts of the Transformer architecture.
+We will describe the main building blocks of the Transformer architecture
+and will give a special treatment to the attention mechanism firstly introduced in \cite{1409.0473}.
 
-% TODO: describe the main 2017 architecture, the self-attention mechanism, why it is useful for anomaly detection
+\subsubsection{General architecture}
 
-% describe the main architecture:
+In \cite{1706.03762}, authors introduced the Transformer architecture which a neural network architecture
+which is the architecture that is dominantly used in Natural Language Processing tasks.
+The architecture's main feature was reliance on the attention mechanism and the complete elimination
+of recurrent and convolutional layers.
+
+\begin{figure}[h!]
+    \centering
+    \includegraphics[scale=0.5]{attention_is_all_you_need.png}
+    \caption{Model architecture of the Transformer \cite{1706.03762}}
+    \label{fig:attention_is_all_you_need}
+\end{figure}
+
+Figure \ref{fig:attention_is_all_you_need} presents the main architecture of the transformer.
+The architecture consists of an \textbf{encoder} and a \textbf{decoder}.
+For the purpose of the thesis we will only consider the \textbf{encoder} part of the architecture.
+% TODO: maybe describe the decoder also?
+The \textbf{encoder} is preceded by a \textbf{positional encoding} layer which is used to \emph{inject} the positional information
+to the input vectors $x_i$ because the attention mechanism is permutation invariant, this will be explained in Section \ref{sec:attention_mechanism}.
+
+The \textbf{encoder} consists of $N$ identical layers. Each layer has two sub-layers which are a
+\textbf{multi-head self-attention} layer and
+a \textbf{feed-forward} layer.
+The \textbf{feed-forward} layer $\text{FFN}(\cdot)$ is a simple fully-connected layer
+with a non-linear activation function applied element-wise to the
+result\footnote{
+    In general, a \textbf{fully-connected} layer $\text{FC}(x)$ is simply a linear transformation inputs $X$ (i.e., a matrix multiplication) with the activation function applied element-wise to the result.
+    That is, $\text{FC}(x)=f(W\cdot x + b)$ where $W$ is a weight matrix and $b$ is a bias vector and $f(\cdot)$ is the activation function.
+    Authors of \cite{1706.03762} used the ReLU activation function
+}.
+Specifically, authors of \cite{1706.03762} used an $\text{FC}$ layer with
+the ReLU activation function $$\text{ReLU}(x)=\max(0, x)$$
+followed by another $\text{FC}$ layer without activation function, i.e.
+$$\text{FFN}(x)=W_2 \cdot ReLU(W_1\cdot x+b_1)+b_2$$
+
+The \textbf{Add \& Norm} layer is a residual connection \cite{1512.03385} followed by a layer normalization layers \cite{1607.06450}.
+Those layers are not essential for this work and will not be described in detail.
+% TODO: maybe describe them in appendix
+
+This constitutes the main building block of the Transformer encoder architecture.
+The next section will describe the attention mechanism in detail.
+
+
+\subsection{Attention mechanism} \label{sec:attention_mechanism}
+
+This section will describe the attention mechanism, its variations and the intuition behind it.
+Moreover, we will compare different attention mechanism implementations in terms of
+their computational complexity and their ability to capture long-range dependencies.
+% basically, a survey...
+
+\subsubsection{Dot-Product Attention and Multi-Head Attention}
+
+The attention mechanism introduced in the Transformer architecture \cite{1706.03762} used a \textbf{scaled dot-product attention}.
+
+The main idea of the \textbf{dot-product attention} mechanism is to compute the mapping of a query $q_i$ for each input vector $x_i$ to a set of key-value pairs $(k_j, v_j)$.
+The query $q_i$, key $k_i$ and value $v_i$ vectors are simply linear transformations of the input vectors $x_i$,
+i.e., $q_i=W_Q\cdot x_i$, $k_i=W_K\cdot x_i$, $v_i=W_V\cdot x_i$ where $W_Q$, $W_K$ and $W_V$ are the weight matrices.
+The attention mechanism is a weighted sum of the values $v_j$ where the weights are computed as a function of the query $q_i$ and the key $k_j$.
+That is, $Attention(x_i)=\sum_j \alpha_{ij} v_j$ where $\alpha_{ij}=\text{softmax}(q_i \cdot v_i)$ is the weight of the $j$-th value $v_j$.
+In practice, the attention mechanism is computed for all the queries $q_i$ at the same time by utilizing the following expression in matrix form:
+\begin{equation}\label{eq:Heston}
+    \begin{array}{rll}
+        Q & = W_Q \cdot X, \\
+        K & = W_K \cdot X, \\
+        V & = W_V \cdot X
+    \end{array}
+\end{equation}
+$$\text{Attention}(Q, K, V)=\text{softmax}(Q K^T) V$$
+
+\begin{remark}
+    In \cite{1706.03762}, authors additionally scaled the weights $\alpha_i$ by the dimension of the key vectors $d_k$.
+    This is, however, not strictly necessary and is done for numerical stability reasons.
+\end{remark}
+
+The \textbf{multi-head attention} mechanism is simply a concatenation of multiple attention mechanisms.
+That is, we can compute $h$ different attention mechanisms in parallel and then concatenate the results.
+The main idea behind this is that different attention mechanisms can learn different features of the input vectors.
+
+Figure \ref{fig:attention_is_all_you_need} visualizes the attention mechanism introduced in \cite{1706.03762}.
+
+\begin{figure}[h!]
+    \centering
+    \includegraphics[scale=0.15]{scaled_dot_product_attention.png}
+    \caption{Scaled Dot-Product Attention and Multi-Head Attention \cite{1706.03762}}
+    \label{fig:scaled_dot_product_attention}
+\end{figure}
+
+
+% TODO: different architectures from lilian weng blog, retformer, the TF in TS survey.
+
+% describe different attention mechanisms
 % https://uvadlc-notebooks.readthedocs.io/en/latest/tutorial_notebooks/tutorial6/Transformers_and_MHAttention.html
 % http://nlp.seas.harvard.edu/annotated-transformer/
 % https://peterbloem.nl/blog/transformers
+% lilian weng
 
+
+\subsection{Transformers for time series modelling}
+
+TODO: provide the main overview of the papers that use transformers for time series modelling,
+the comparison to other methods, the comparison of different transformer architectures specifically
+tailored for time-series
 
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
@@ -193,7 +307,7 @@ In this section, the main design principles of programming an FPGA board will be
 
 \subsection{Introduction to FPGA}
 
-% TODO: chatGPT
+% TODO: maybe rewrite
 The progress of hardware acceleration devices like field-programmable gate arrays (FPGAs) enables the achievement of high component density and low power consumption, all the while minimizing latency \cite{10.1007/978-3-319-56258-2_14}. They are commonly used to accelerate high-performance, computationally intensive systems (for example, data centers) or to minimize the latency of execution (for example, in high-frequency trading).
 
 \subsection{FPGA development and HLS}
@@ -264,12 +378,51 @@ TODO:
 In this section, the datasets used for evaluation will be described.
 
 \subsection{Numenta Anomaly Benchmark (NAB)}
-To assess the accuracy of predictions, we use the Numenta Anomaly Benchmark ~\cite{Ahmad2017Unsupervised} dataset, which contains various real-world time series of temperature sensor readings, CPU utilization of cloud machines, service request latencies, and taxi demands in New York City. It is commonly used to assess the performance of anomaly detection models on time-series data.
+To assess the accuracy of predictions, we use the Numenta Anomaly Benchmark ~\cite{Ahmad2017Unsupervised} dataset,
+which contains various real-world labeled time series of temperature sensor readings, CPU utilization of cloud machines, service
+request latencies, and taxi demands in New York City. It is commonly used to assess the performance of anomaly detection
+models on time-series data.
+
+The reason why we use this dataset is that it is a standard benchmark dataset
+for anomaly detection in time series and because it has a large number of labeled time series.
+
+A sample time series of NYC taxi demand is presented in Figure \ref{fig:NAB_example_nyc_taxi}.
+\begin{figure}[h!]
+    \centering
+    \includegraphics[scale=0.48]{NAB_example_nyc_taxi.png}
+    \caption{NYC Taxi demand - anomalies highlighted in red}
+    \label{fig:NAB_example_nyc_taxi}
+\end{figure}
+
+\subsection{KPI Anomaly Detection Dataset}
+
+The other labeled dataset that we use is the KPI Anomaly Detection Dataset (KPI AIOps) \cite{2208.03938}.
+This dataset alongside the NAB dataset will be used to evaluate the predictive performance of the anomaly detection models.
+
+The dataset consists of KPI (key performace index) time series data from many
+real scenarios of Internet companies with ground truth label. KPIs fall into two
+broad categories: service KPIs and machine KPIs. Service KPIs are performance metrics
+that reflect the size and quality of a Web service, such as page response time, page views,
+and number of connection errors. Machine KPIs are performance indicators that reflect
+the health of the machine (server, router, switch), such as CPU utilization, memory utilization,
+disk IO and network card throughput.
+
+A sample time series of a sensor readings is presented in Figure \ref{fig:NAB_example_nyc_taxi}.
+We can clearly see the outliers for some of the observations (colored in red).
+\begin{figure}[h!]
+    \centering
+    \includegraphics[scale=0.48]{KPIAIOps_example.png}
+    \caption{Sensor data from a machine in a data center. The red dots indicate the anomalies.}
+    \label{fig:KPIAIOps_example}
+\end{figure}
 
 \subsection{FI2010}
 
 In \cite{1705.03233}, authors described the first publicly available benchmark dataset of high-frequency limit order markets for mid-price prediction.
-The dataset contains 10-day limit order book data from June 2010 for five stocks that are listed on the Helsinki exchange. Each entry in the time series provides price details and aggregate order sizes for the top ten levels on both the bid and offer sides of the market, totaling forty data points. The time series consists of approximately four million messages, representing incoming buy/sell orders or cancellations. the dataset features order book snapshots taken after every 10 messages, resulting in approximately 400,000 records for the five stocks.
+The dataset contains 10-day limit order book data from June 2010 for five stocks that are listed on the Helsinki exchange.
+Each entry in the time series provides price details and aggregate order sizes for the top ten levels on both the bid and offer sides of the market,
+totaling forty data points. The time series consists of approximately four million messages, representing incoming buy/sell orders or cancellations.
+The dataset features order book snapshots taken after every 10 messages, resulting in approximately 400,000 records for the five stocks.
 
 A number of versions of the dataset are available using different normalization schemes. We used the not normalized version of the dataset.
 
@@ -286,9 +439,20 @@ The algorithm can be summarized as follows:
     \item Replace the sample $S_i$ with $\hat{S}_i=S_i(1+\delta)$ where $\delta$ is the injected outlier in the return space.
 \end{enumerate}
 
-Authors model $\delta$ as a uniformly distributed random variable $\mathcal{U}[0, \rho]$. We instead use the normal distribution with matching mean and standard deviation of the returns time series.
+Authors model $\delta$ as a uniformly distributed random variable $\mathcal{U}[0, \rho]$.
+We instead use the normal distribution with matching mean and standard deviation of the returns time series.
+
+An example of the injected outliers is presented in Figure \ref{fig:FI2010_example_outliers_injected}
+\begin{figure}[h!]
+    \centering
+    \includegraphics[scale=0.48]{FI2010_example_outliers_injected.png}
+    \caption{Example of the injected outliers in the FI2010 dataset.}
+    \label{fig:FI2010_example_outliers_injected}
+\end{figure}
 
 \section{Accuracy}
+
+TODO: describe the main metrics (accuracy, balanced accuracy, F1, Cohen's Kappa, Confusion matrix)
 
 
 \section{Performance/Speed}

@@ -58,6 +58,7 @@ data/HFT
 # random
 _thesis_draft.tex
 reading
+tex/original_thesis_main.tex
 
 # random cpp stuff
 a.out
