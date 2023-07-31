@@ -4,6 +4,8 @@ import torch
 import torch.nn as nn
 import torch.nn.functional as F
 
+from fast_transformers.builders import TransformerEncoderBuilder
+
 
 # implemented as in https://uvadlc-notebooks.readthedocs.io/en/latest/tutorial_notebooks/tutorial6/Transformers_and_MHAttention.html
 
@@ -101,6 +103,37 @@ class Transformer(nn.Module):
         x = x.unsqueeze(0)  # TODO: maybe remove...
         x = self.self_attention(x)
         x = self.fc(x)
+        # since we want to predict the probability of each class
+        x = x.reshape(x.shape[0], x.shape[1])
+        x = torch.sigmoid(x)
+        x = x.transpose(0, 1)
+        return x
+
+
+# see https://github.com/idiap/fast-transformers
+class LinearTransformer(nn.Module):
+    def __init__(self, input_dim, num_heads, embed_dim):
+        super().__init__()
+        builder = TransformerEncoderBuilder.from_kwargs(
+            n_layers=1,
+            n_heads=num_heads,
+            query_dimensions=embed_dim,
+            value_dimensions=embed_dim,
+            feed_forward_dimensions=embed_dim,
+        )
+        builder.attention_type = "linear"
+        self.linear_transformer = builder.get()
+        # print(self.linear_transformer)
+        self.fc = nn.Linear(num_heads * embed_dim, 1)
+
+    def forward(self, x):
+        # x is of shape (batch_size, seq_len, features)
+        x = x.unsqueeze(0)  # TODO: maybe remove...
+        # print(x.shape)
+        x = self.linear_transformer(x)
+        # print(x.shape)
+        x = self.fc(x)
+        # print(x.shape)
         # since we want to predict the probability of each class
         x = x.reshape(x.shape[0], x.shape[1])
         x = torch.sigmoid(x)
