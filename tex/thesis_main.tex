@@ -322,6 +322,14 @@ which makes it evident that we can compute $\sum_j \phi(k_j) v_j$ once and reuse
 which reduces the computational complexity from $O(N^2)$ to $O(N)$ where $N$ is the number of input vectors
 in the attention layer.
 
+\begin{remark}
+    In \cite{2006.16236}, authors used the $\phi(x)=elu(x)+1$ feature map where
+    $elu(x)=\max(0, x)+\min(0, \alpha(\exp(x)-1))$ is the exponential linear unit activation function.
+    This feature map is used to ensure that the attention mechanism is non-negative
+    and hence defines a valid attention function. Moreover, $elu(\cdot)$ is used instead of $ReLU(\cdot)$
+    to ensure the differentiability when x is negative.
+\end{remark}
+
 
 
 % TODO: different architectures from lilian weng blog, retformer, the TF in TS survey.
