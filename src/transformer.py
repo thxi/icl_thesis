@@ -98,9 +98,11 @@ class Transformer(nn.Module):
 
     def forward(self, x):
         # x is of shape (batch_size, seq_len, features)
+        x = x.unsqueeze(0)  # TODO: maybe remove...
         x = self.self_attention(x)
         x = self.fc(x)
         # since we want to predict the probability of each class
         x = x.reshape(x.shape[0], x.shape[1])
         x = torch.sigmoid(x)
+        x = x.transpose(0, 1)
         return x
