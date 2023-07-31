@@ -124,10 +124,12 @@ class LinearTransformer(nn.Module):
         builder.attention_type = "linear"
         self.linear_transformer = builder.get()
         # print(self.linear_transformer)
+        self.fc_input = nn.Linear(input_dim, embed_dim)
         self.fc = nn.Linear(num_heads * embed_dim, 1)
 
     def forward(self, x):
         # x is of shape (batch_size, seq_len, features)
+        x = self.fc_input(x)
         x = x.unsqueeze(0)  # TODO: maybe remove...
         # print(x.shape)
         x = self.linear_transformer(x)

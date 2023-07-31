@@ -253,17 +253,19 @@ i.e., $q_i=W_Q\cdot x_i$, $k_i=W_K\cdot x_i$, $v_i=W_V\cdot x_i$ where $W_Q$, $W
 The attention mechanism is a weighted sum of the values $v_j$ where the weights are computed as a function of the query $q_i$ and the key $k_j$.
 That is, $Attention(x_i)=\sum_j \alpha_{ij} v_j$ where $\alpha_{ij}=\text{softmax}(q_i \cdot v_i)$ is the weight of the $j$-th value $v_j$.
 In practice, the attention mechanism is computed for all the queries $q_i$ at the same time by utilizing the following expression in matrix form:
-\begin{equation}\label{eq:Heston}
+\begin{equation}
     \begin{array}{rll}
         Q & = W_Q \cdot X, \\
         K & = W_K \cdot X, \\
         V & = W_V \cdot X
     \end{array}
 \end{equation}
-$$\text{Attention}(Q, K, V)=\text{softmax}(Q K^T) V$$
+\begin{equation}\label{eq:dot_product_attention_matrix}
+    \text{Attention}(Q, K, V)=\text{softmax}(Q K^T) V
+\end{equation}
 
 \begin{remark}
-    In \cite{1706.03762}, authors additionally scaled the weights $\alpha_i$ by the dimension of the key vectors $d_k$.
+    In \cite{1706.03762}, authors additionally scaled the weights $\alpha_i$ by the square root of the dimension of the key vectors $d_k$.
     This is, however, not strictly necessary and is done for numerical stability reasons.
 \end{remark}
 
@@ -281,13 +283,48 @@ Figure \ref{fig:attention_is_all_you_need} visualizes the attention mechanism in
 \end{figure}
 
 
-% TODO: different architectures from lilian weng blog, retformer, the TF in TS survey.
+
 
 \subsubsection{Linear attention}
 
-In \cite{2006.16236}, authors propose a new attention mechanism called \textbf{linear attention}.
+In \cite{2006.16236}, authors propose an extension to the dot-product attention mechanism called \textbf{linear attention}.
+This significantly reduces the computational complexity of the attention mechanism by eliminating the need to compute the softmax function.
+
+Notice that in \ref{eq:dot_product_attention_matrix}, the softmax function is applied rowwise to the matrix $Q K^T$.
+The softmax function can be substituted with a general similarity function $\text{sim}(\cdot, \cdot)$ between a query $q_i$ and a key $k_j$.
+The equation \ref{eq:dot_product_attention_matrix} for output value $v'_i$ can then be rewritten as follows:
+\begin{equation}
+    v'_i=\text{Attention}(Q, K, V)_i=\frac{\sum_j \text{sim}(q_i, k_j) v_j}{\sum_j \text{sim}(q_i, k_j)}
+\end{equation}
+
+% TODO: maybe explain the kernel trick...
+% https://en.wikipedia.org/wiki/Kernel_method
+The only constrained imposed on the similarity function $\text{sim}(\cdot, \cdot)$ is that it should be non-negative for it to define an attention function.
+This conveniently includes all kernels. That is $\text{sim}(q_i, k_j)=\phi(q_i)^T \phi(k_j)$ where $\phi(\cdot)$ is a feature map.
+
+So that given a kernel with a feature map $\phi(\cdot)$, the attention mechanism can be computed as follows:
+\begin{equation}
+    v'_i=\text{Attention}(Q, K, V)_i=\frac{\sum_j \phi(q_i)^T \phi(k_j) v_j}{\sum_j \phi(q_i)^T \phi(k_j)}
+\end{equation}
+
+And we can rewrite the attention mechanism in matrix form as follows:
+\begin{equation}
+    \text{Attention}(Q, K, V)=\frac{\phi(Q)^T \phi(K) V}{\phi(Q)^T \phi(K)}
+\end{equation}
+
+Regrouping the terms, we get the following expression for the attention mechanism:
+\begin{equation}
+    \text{Attention}(Q, K, V)=\phi(Q)^T \frac{\phi(K) V}{\phi(Q)^T \phi(K)}
+\end{equation}
+
+% TODO: maybe rewrite with an example so that it is even more evident for the reader?...
+which makes it evident that we can compute $\sum_j \phi(k_j) v_j$ once and reuse them for all the queries $q_i$
+which reduces the computational complexity from $O(N^2)$ to $O(N)$ where $N$ is the number of input vectors
+in the attention layer.
 
 
+
+% TODO: different architectures from lilian weng blog, retformer, the TF in TS survey.
 % describe different attention mechanisms
 % https://uvadlc-notebooks.readthedocs.io/en/latest/tutorial_notebooks/tutorial6/Transformers_and_MHAttention.html
 % http://nlp.seas.harvard.edu/annotated-transformer/
