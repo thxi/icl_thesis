@@ -4,8 +4,8 @@
 # In[1]:
 
 
-get_ipython().run_line_magic('load_ext', 'autoreload')
-get_ipython().run_line_magic('autoreload', '2')
+get_ipython().run_line_magic("load_ext", "autoreload")
+get_ipython().run_line_magic("autoreload", "2")
 
 import sys
 
@@ -34,9 +34,9 @@ from tqdm.auto import tqdm
 # In[7]:
 
 
-sentence = 'Life is short, eat dessert first'
+sentence = "Life is short, eat dessert first"
 
-dc = {s:i for i,s in enumerate(sorted(sentence.replace(',', '').split()))}
+dc = {s: i for i, s in enumerate(sorted(sentence.replace(",", "").split()))}
 print(dc)
 
 
@@ -45,7 +45,7 @@ print(dc)
 
 import torch
 
-sentence_int = torch.tensor([dc[s] for s in sentence.replace(',', '').split()])
+sentence_int = torch.tensor([dc[s] for s in sentence.replace(",", "").split()])
 print(sentence_int)
 
 
@@ -211,7 +211,3 @@ W_query
 
 
 # In[ ]:
-
-
-
-

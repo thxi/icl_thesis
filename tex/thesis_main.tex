@@ -156,6 +156,8 @@ In this chapter, we will describe the main concepts and ideas used in this work.
 The reader will be introduced to the main concepts of the Transformer architecture and how it can be used for anomaly detection in time series.
 Finally, the main concepts of programming an FPGA will be introduced and the specific optimizations that can be applied to speed up the computations.
 
+% TODO: use neurips paper as an example:
+% https://proceedings.neurips.cc/paper_files/paper/2019/file/6775a0635c302542da2c32aa19d86be0-Paper.pdf
 
 \section{Problem Formulation}
 
@@ -213,6 +215,9 @@ For the purpose of the thesis we will only consider the \textbf{encoder} part of
 The \textbf{encoder} is preceded by a \textbf{positional encoding} layer which is used to \emph{inject} the positional information
 to the input vectors $x_i$ because the attention mechanism is permutation invariant, this will be explained in Section \ref{sec:attention_mechanism}.
 
+% TODO: explain positional encoding and why we need it
+% https://uvadlc-notebooks.readthedocs.io/en/latest/tutorial_notebooks/tutorial6/Transformers_and_MHAttention.html
+
 The \textbf{encoder} consists of $N$ identical layers. Each layer has two sub-layers which are a
 \textbf{multi-head self-attention} layer and
 a \textbf{feed-forward} layer.
@@ -245,7 +250,17 @@ their computational complexity and their ability to capture long-range dependenc
 
 \subsubsection{Dot-Product Attention and Multi-Head Attention}
 
+% TODO: cite the common dot-product attention not as a scaled dot product attention
+% https://lilianweng.github.io/posts/2018-06-24-attention/
+
 The attention mechanism introduced in the Transformer architecture \cite{1706.03762} used a \textbf{scaled dot-product attention}.
+
+% TODO: cite similarity to non-local filters
+% Self-attention is a type of attention mechanism where the model
+% makes prediction for one part of a data sample using other parts
+% of the observation about the same sample. Conceptually, it feels quite similar
+% to non-local means. Also note that self-attention is permutation-invariant;
+% in other words, it is an operation on sets.
 
 The main idea of the \textbf{dot-product attention} mechanism is to compute the mapping of a query $q_i$ for each input vector $x_i$ to a set of key-value pairs $(k_j, v_j)$.
 The query $q_i$, key $k_i$ and value $v_i$ vectors are simply linear transformations of the input vectors $x_i$,
@@ -330,6 +345,10 @@ in the attention layer.
     to ensure the differentiability when x is negative.
 \end{remark}
 
+
+% TODO: compare to other competitors for attention layer
+% https://uvadlc-notebooks.readthedocs.io/en/latest/tutorial_notebooks/tutorial6/Transformers_and_MHAttention.html
+% convolutional, etc.
 
 
 % TODO: different architectures from lilian weng blog, retformer, the TF in TS survey.
