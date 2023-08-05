@@ -206,34 +206,62 @@ class PositionalEncoding(nn.Module):
         return x
 
 
-# class Transformer(nn.Module):
-#     def __init__(self, input_dim, embed_dim, num_heads, output_dim):
-#         super().__init__()
-#         self.input_dim = input_dim
-#         self.embed_dim = embed_dim
-#         self.num_heads = num_heads
-#         self.head_dim = embed_dim // num_heads
+class TransformerAnomalyDetector(nn.Module):
+    def __init__(
+        self,
+        input_dim,
+        block_input_dim,
+        block_args,
+        num_layers,
+        positional_encoder_args,
+        dropout=0.0,
+    ):
+        super().__init__()
+        self.input_dim = input_dim
+        self.num_layers = num_layers
+        self.dropout = dropout
 
-#         # self-attention layer
-#         self.self_attention = MultiheadAttention(input_dim, embed_dim, num_heads)
+        # TODO:
+        # maybe use batchnorm as the first layer
+        self.front_linear = nn.Linear(input_dim, block_input_dim)
 
-#         # final layer
-#         self.fc = nn.Linear(embed_dim, output_dim)
+        # positional encoding
+        self.positional_encoder = PositionalEncoding(block_input_dim, **positional_encoder_args)
 
-#     def forward(self, x):
-#         # x is of shape (batch_size, seq_len, features)
-#         x = x.unsqueeze(0)  # TODO: maybe remove...
-#         x = self.self_attention(x)
-#         x = self.fc(x)
-#         # since we want to predict the probability of each class
-#         x = x.reshape(x.shape[0], x.shape[1])
-#         x = torch.sigmoid(x)
-#         x = x.transpose(0, 1)
-#         return x
+        # transformer encoder
+        self.transformer_encoder = TransformerEncoder(
+            **block_args,
+        )
+
+        # final layer
+        self.final_linear = nn.Linear(block_input_dim, 1)
+
+    def forward(self, x):
+        # x is of shape (batch_size, seq_len, features)
+        batch_size, seq_len, _ = x.size()
+
+        # front linear layer
+        x = self.front_linear(x)
+
+        # positional encoding
+        x = self.positional_encoder(x)
+
+        # transformer encoder
+        x = self.transformer_encoder(x)
+
+        # final layer
+        x = self.final_linear(x)  # [Batch, SeqLen, 1]
+
+        # since we want to predict the probability of each class
+        # x = x.reshape(batch_size, seq_len)
+        # x = torch.sigmoid(x[:, 0])
+        x = x[:, 0, 0]
+        return x
 
 
-# TODO:
-# use batchnorm as the first layer
+# last_linear = nn.Linear(block_input_dim, out_dim)
+# xx = front_linear(xx)
+# tf_enc(xx)
 
 
 # see https://github.com/idiap/fast-transformers
@@ -256,14 +284,10 @@ class LinearTransformer(nn.Module):
     def forward(self, x):
         # x is of shape (batch_size, seq_len, features)
         x = self.fc_input(x)
-        x = x.unsqueeze(0)  # TODO: maybe remove...
         # print(x.shape)
         x = self.linear_transformer(x)
         # print(x.shape)
         x = self.fc(x)
-        # print(x.shape)
-        # since we want to predict the probability of each class
-        x = x.reshape(x.shape[0], x.shape[1])
-        x = torch.sigmoid(x)
-        x = x.transpose(0, 1)
+        # x = torch.sigmoid(x)
+        x = x[:, 0, 0]
         return x
