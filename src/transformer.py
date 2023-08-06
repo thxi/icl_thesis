@@ -7,8 +7,9 @@ import torch
 import torch.nn as nn
 import torch.nn.functional as F
 
-# import lightning.pytorch as pl
-import pytorch_lightning as pl
+import lightning.pytorch as pl
+
+# import pytorch_lightning as pl
 
 from fast_transformers.builders import TransformerEncoderBuilder
 
