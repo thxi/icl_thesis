@@ -111,7 +111,14 @@ class MultiheadAttention(nn.Module):
 
 # encoder block
 class EncoderBlock(nn.Module):
-    def __init__(self, input_dim, num_heads, dim_feedforward, dropout=0.0):
+    def __init__(
+        self,
+        input_dim,
+        num_heads,
+        dim_feedforward,
+        dropout=0.0,
+        enable_layer_norm=True,
+    ):
         """
         Inputs:
             input_dim - Dimensionality of the input
@@ -143,8 +150,14 @@ class EncoderBlock(nn.Module):
         )
 
         # Layers to apply in between the main layers
-        self.norm1 = nn.LayerNorm(input_dim)
-        self.norm2 = nn.LayerNorm(input_dim)
+        logger.info(f"layer norm enabled: {enable_layer_norm}")
+        if enable_layer_norm:
+            self.norm1 = nn.LayerNorm(input_dim)
+            self.norm2 = nn.LayerNorm(input_dim)
+        else:
+            logger.warning("layer norm disabled")
+            self.norm1 = nn.Identity()
+            self.norm2 = nn.Identity()
         self.dropout = nn.Dropout(dropout)
 
     def forward(self, x, mask=None):
@@ -240,6 +253,7 @@ class TransformerAnomalyDetector(pl.LightningModule):
                 **self.hparams.positional_encoder_args,
             )
         else:
+            logger.warning("positional encoding disabled")
             self.positional_encoder = nn.Identity()
 
         # transformer encoder
