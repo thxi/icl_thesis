@@ -220,6 +220,7 @@ class TransformerAnomalyDetector(pl.LightningModule):
         block_args,
         num_layers,
         positional_encoder_args,
+        learning_rate,
         dropout=0.0,
     ):
         super().__init__()
@@ -232,8 +233,8 @@ class TransformerAnomalyDetector(pl.LightningModule):
         self.front_linear = nn.Linear(self.hparams.input_dim, self.hparams.block_input_dim)
 
         # positional encoding
-        if self.hparams.positional_encoder_args.enable:
-            logger.info("Using positional encoding")
+        logger.info(f"positional encoding enabled: {self.hparams.positional_encoder_args['enable']}")
+        if self.hparams.positional_encoder_args["enable"]:
             self.positional_encoder = PositionalEncoding(
                 self.hparams.block_input_dim,
                 **self.hparams.positional_encoder_args,
@@ -277,8 +278,8 @@ class TransformerAnomalyDetector(pl.LightningModule):
         loss = F.mse_loss(x_hat, x)
         return loss
 
-    def configure_optimizers(self, lr):
-        optimizer = torch.optim.Adam(self.parameters(), lr=lr)
+    def configure_optimizers(self):
+        optimizer = torch.optim.Adam(self.parameters(), lr=self.hparams.learning_rate)
         return optimizer
 
 
