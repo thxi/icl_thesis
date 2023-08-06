@@ -1,3 +1,4 @@
+import logging
 import math
 
 import torch
@@ -7,6 +8,9 @@ import torch.nn.functional as F
 import lightning.pytorch as pl
 
 from fast_transformers.builders import TransformerEncoderBuilder
+
+# configure logger
+logger = logging.getLogger(__name__)
 
 
 # implemented as in https://uvadlc-notebooks.readthedocs.io/en/latest/tutorial_notebooks/tutorial6/Transformers_and_MHAttention.html
@@ -219,24 +223,31 @@ class TransformerAnomalyDetector(pl.LightningModule):
         dropout=0.0,
     ):
         super().__init__()
-        self.input_dim = input_dim
-        self.num_layers = num_layers
-        self.dropout = dropout
+        self.save_hyperparameters()
+        self._create_model()
 
+    def _create_model(self):
         # TODO:
         # maybe use batchnorm as the first layer
-        self.front_linear = nn.Linear(input_dim, block_input_dim)
+        self.front_linear = nn.Linear(self.hparams.input_dim, self.hparams.block_input_dim)
 
         # positional encoding
-        self.positional_encoder = PositionalEncoding(block_input_dim, **positional_encoder_args)
+        if self.hparams.positional_encoder_args.enable:
+            logger.info("Using positional encoding")
+            self.positional_encoder = PositionalEncoding(
+                self.hparams.block_input_dim,
+                **self.hparams.positional_encoder_args,
+            )
+        else:
+            self.positional_encoder = nn.Identity()
 
         # transformer encoder
         self.transformer_encoder = TransformerEncoder(
-            **block_args,
+            **self.hparams.block_args,
         )
 
         # final layer
-        self.final_linear = nn.Linear(block_input_dim, 1)
+        self.final_linear = nn.Linear(self.hparams.block_input_dim, 1)
 
     def forward(self, x):
         # x is of shape (batch_size, seq_len, features)
@@ -246,7 +257,7 @@ class TransformerAnomalyDetector(pl.LightningModule):
         x = self.front_linear(x)
 
         # positional encoding
-        x = self.positional_encoder(x)
+        # x = self.positional_encoder(x)
 
         # transformer encoder
         x = self.transformer_encoder(x)
