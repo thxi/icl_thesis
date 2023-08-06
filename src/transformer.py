@@ -4,6 +4,8 @@ import torch
 import torch.nn as nn
 import torch.nn.functional as F
 
+import lightning.pytorch as pl
+
 from fast_transformers.builders import TransformerEncoderBuilder
 
 
@@ -206,7 +208,7 @@ class PositionalEncoding(nn.Module):
         return x
 
 
-class TransformerAnomalyDetector(nn.Module):
+class TransformerAnomalyDetector(pl.LightningModule):
     def __init__(
         self,
         input_dim,
@@ -257,6 +259,16 @@ class TransformerAnomalyDetector(nn.Module):
         # x = torch.sigmoid(x[:, 0])
         x = x[:, 0, 0]
         return x
+
+    def training_step(self, batch, batch_idx):
+        x, y = batch
+        y_pred = self(x)
+        loss = F.mse_loss(x_hat, x)
+        return loss
+
+    def configure_optimizers(self, lr):
+        optimizer = torch.optim.Adam(self.parameters(), lr=lr)
+        return optimizer
 
 
 # last_linear = nn.Linear(block_input_dim, out_dim)
