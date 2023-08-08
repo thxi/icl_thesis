@@ -363,35 +363,240 @@ class TransformerAnomalyDetector(pl.LightningModule):
         return optimizer
 
 
+class LinearRegressionAnomalyDetector(pl.LightningModule):
+    def __init__(
+        self,
+        input_dim,
+        learning_rate,
+        loss_fn,
+    ):
+        super().__init__()
+        self.save_hyperparameters(ignore=["loss_fn"])
+        self._create_model()
+
+        self.loss_fn = loss_fn
+        self.training_step_outputs = []
+        self.validation_step_outputs = []
+
+    def _create_model(self):
+        self.linear = nn.Linear(self.hparams.input_dim, 1)
+
+    def forward(self, x):
+        # x is of shape (batch_size, seq_len, features)
+        batch_size, seq_len, _ = x.size()
+        x = x.reshape(batch_size, -1)
+
+        # front linear layer
+        x = self.linear(x)
+
+        # since we want to predict the probability of each class
+        x = x[:, 0]
+        return x
+
+    def training_step(self, batch, batch_idx):
+        # self.train()
+        x_batch, y_batch = batch
+        y_pred = self(x_batch)
+        loss = self.loss_fn(y_pred, y_batch)
+        self.training_step_outputs.append((loss, x_batch, y_batch))
+        # self.log("train_loss", loss)
+        return loss
+
+    def validation_step(self, batch, batch_idx):
+        # self.eval()
+        x_batch, y_batch = batch
+        y_pred = self(x_batch)
+        loss = self.loss_fn(y_pred, y_batch)
+        self.validation_step_outputs.append((loss, x_batch, y_batch))
+        # self.log("val_loss", loss)
+        return loss
+
+    def on_train_epoch_end(self):
+        step_outputs = self.training_step_outputs
+        self._epoch_end(step_outputs, mode="train")
+
+    def on_validation_epoch_end(self):
+        step_outputs = self.validation_step_outputs
+        self._epoch_end(step_outputs, mode="val")
+
+    def _epoch_end(self, step_outputs, mode):
+        res_dict = {}
+        # self.eval()
+        test_loss = 0
+        num_batches = 0
+
+        all_y = []
+        all_y_pred = []
+        with torch.no_grad():
+            for loss, x_batch, y_batch in step_outputs:
+                y_pred = self(x_batch)
+                all_y.append(y_batch)
+
+                test_loss += loss.item()
+
+                # convert sigmoid to labels
+                y_pred = y_pred.reshape(-1)
+                y_pred = (y_pred > 0.5).int()
+                all_y_pred.append(y_pred)
+                num_batches += 1
+
+        test_loss /= num_batches
+        res_dict["loss"] = test_loss
+        all_y = torch.cat(all_y)
+        all_y_pred = torch.cat(all_y_pred)
+        res_dict = res_dict | get_metrics(y_true=all_y.cpu().numpy(), y_pred=all_y_pred.cpu().numpy())
+
+        for k, v in res_dict.items():
+            self.log(f"{mode}_{k}", np.float32(v))
+
+        if mode == "val":
+            self.validation_step_outputs.clear()
+        else:
+            self.training_step_outputs.clear()
+
+    def configure_optimizers(self):
+        optimizer = torch.optim.Adam(self.parameters(), lr=self.hparams.learning_rate)
+        return optimizer
+
+
 # last_linear = nn.Linear(block_input_dim, out_dim)
 # xx = front_linear(xx)
 # tf_enc(xx)
 
 
 # see https://github.com/idiap/fast-transformers
-class LinearTransformer(nn.Module):
-    def __init__(self, input_dim, num_heads, embed_dim):
+class LinearTransformerAnomalyDetector(pl.LightningModule):
+    def __init__(
+        self,
+        input_dim,
+        block_input_dim,
+        block_args,
+        num_layers,
+        positional_encoder_args,
+        learning_rate,
+        loss_fn,
+        dropout=0.0,
+    ):
         super().__init__()
+        self.save_hyperparameters(ignore=["loss_fn"])
+        self._create_model()
+
+        self.loss_fn = loss_fn
+        self.training_step_outputs = []
+        self.validation_step_outputs = []
+
+    def _create_model(self):
+        self.front_linear = nn.Linear(self.hparams.input_dim, self.hparams.block_input_dim)
+
+        # TODO: add keyword to disable all layernorm
+        # now doing it manuall
         builder = TransformerEncoderBuilder.from_kwargs(
-            n_layers=1,
-            n_heads=num_heads,
-            query_dimensions=embed_dim,
-            value_dimensions=embed_dim,
-            feed_forward_dimensions=embed_dim,
+            attention_type="linear",
+            n_layers=self.hparams.block_args["num_layers"],
+            n_heads=self.hparams.block_args["num_heads"],
+            query_dimensions=self.hparams.block_args["input_dim"],
+            value_dimensions=self.hparams.block_args["input_dim"],
+            feed_forward_dimensions=self.hparams.block_args["dim_feedforward"],
+            final_normalization=self.hparams.block_args["enable_layer_norm"],
+            dropout=self.hparams.dropout,
         )
-        builder.attention_type = "linear"
-        self.linear_transformer = builder.get()
-        # print(self.linear_transformer)
-        self.fc_input = nn.Linear(input_dim, embed_dim)
-        self.fc = nn.Linear(num_heads * embed_dim, 1)
+        self.transformer_encoder = builder.get()
+        # print(self.transformer_encoder )
+
+        # positional encoding
+        logger.info(f"positional encoding enabled: {self.hparams.positional_encoder_args['enable']}")
+        if self.hparams.positional_encoder_args["enable"]:
+            self.positional_encoder = PositionalEncoding(
+                self.hparams.block_input_dim,
+                **self.hparams.positional_encoder_args,
+            )
+        else:
+            logger.warning("positional encoding disabled")
+            self.positional_encoder = nn.Identity()
+
+        # final layer
+        self.final_linear = nn.Linear(self.hparams.block_input_dim, 1)
 
     def forward(self, x):
         # x is of shape (batch_size, seq_len, features)
-        x = self.fc_input(x)
-        # print(x.shape)
-        x = self.linear_transformer(x)
-        # print(x.shape)
-        x = self.fc(x)
-        # x = torch.sigmoid(x)
+        batch_size, seq_len, _ = x.size()
+
+        # front linear layer
+        x = self.front_linear(x)
+
+        # positional encoding
+        x = self.positional_encoder(x)
+
+        # transformer encoder
+        x = self.transformer_encoder(x)
+
+        # final layer
+        x = self.final_linear(x)  # [Batch, SeqLen, 1]
+
         x = x[:, 0, 0]
         return x
+
+    def training_step(self, batch, batch_idx):
+        # self.train()
+        x_batch, y_batch = batch
+        y_pred = self(x_batch)
+        loss = self.loss_fn(y_pred, y_batch)
+        self.training_step_outputs.append((loss, x_batch, y_batch))
+        # self.log("train_loss", loss)
+        return loss
+
+    def validation_step(self, batch, batch_idx):
+        # self.eval()
+        x_batch, y_batch = batch
+        y_pred = self(x_batch)
+        loss = self.loss_fn(y_pred, y_batch)
+        self.validation_step_outputs.append((loss, x_batch, y_batch))
+        # self.log("val_loss", loss)
+        return loss
+
+    def on_train_epoch_end(self):
+        step_outputs = self.training_step_outputs
+        self._epoch_end(step_outputs, mode="train")
+
+    def on_validation_epoch_end(self):
+        step_outputs = self.validation_step_outputs
+        self._epoch_end(step_outputs, mode="val")
+
+    def _epoch_end(self, step_outputs, mode):
+        res_dict = {}
+        # self.eval()
+        test_loss = 0
+        num_batches = 0
+
+        all_y = []
+        all_y_pred = []
+        with torch.no_grad():
+            for loss, x_batch, y_batch in step_outputs:
+                y_pred = self(x_batch)
+                all_y.append(y_batch)
+
+                test_loss += loss.item()
+
+                # convert sigmoid to labels
+                y_pred = y_pred.reshape(-1)
+                y_pred = (y_pred > 0.5).int()
+                all_y_pred.append(y_pred)
+                num_batches += 1
+
+        test_loss /= num_batches
+        res_dict["loss"] = test_loss
+        all_y = torch.cat(all_y)
+        all_y_pred = torch.cat(all_y_pred)
+        res_dict = res_dict | get_metrics(y_true=all_y.cpu().numpy(), y_pred=all_y_pred.cpu().numpy())
+
+        for k, v in res_dict.items():
+            self.log(f"{mode}_{k}", np.float32(v))
+
+        if mode == "val":
+            self.validation_step_outputs.clear()
+        else:
+            self.training_step_outputs.clear()
+
+    def configure_optimizers(self):
+        optimizer = torch.optim.Adam(self.parameters(), lr=self.hparams.learning_rate)
+        return optimizer
