@@ -464,6 +464,165 @@ class LinearRegressionAnomalyDetector(pl.LightningModule):
 # tf_enc(xx)
 
 
+class FeatureMap(nn.Module):
+    def __init__(
+        self,
+        feature_type="elu",
+    ):
+        super().__init__()
+        self.feature_type = feature_type
+
+    def forward(self, x):
+        return torch.nn.functional.elu(x) + 1
+
+
+class LinearAttention(nn.Module):
+    def __init__(
+        self,
+        input_dim,
+        embed_dim,
+        num_heads,
+        eps=1e-6,
+        feature_map="elu",
+    ):
+        super().__init__()
+        self.embed_dim = embed_dim
+        self.num_heads = num_heads
+        self.head_dim = embed_dim // num_heads
+        # a small number to ensure the numerical stability of the denominator
+        self.eps = eps
+        self.qkv_proj = nn.Linear(input_dim, 3 * embed_dim, bias=False)
+        self.o_proj = nn.Linear(embed_dim, embed_dim)
+        self.feature_map = FeatureMap(feature_type=feature_map)
+
+        self._reset_parameters()
+
+    def _reset_parameters(self):
+        nn.init.xavier_uniform_(self.qkv_proj.weight)
+        nn.init.xavier_uniform_(self.o_proj.weight)
+        self.o_proj.bias.data.fill_(0)
+
+    def forward(self, x, mask=None):
+        batch_size, seq_length, _ = x.size()  # [Batch, SeqLen, Dims]
+        if mask is not None:
+            raise NotImplementedError("mask is not supported yet")
+        qkv = self.qkv_proj(x)  # [Batch, SeqLen, 3 * Dims]
+        print(qkv.shape)
+
+        # Separate Q, K, V from linear output
+        qkv = qkv.reshape(batch_size, seq_length, self.num_heads, 3 * self.head_dim)
+        qkv = qkv.permute(0, 2, 1, 3)  # [Batch, Head, SeqLen, Dims]
+        q, k, v = qkv.chunk(3, dim=-1)  # 3*[Batch, Head, SeqLen, Dims]
+        q = self.feature_map(q)
+        k = self.feature_map(k)
+
+        # Compute the KV matrix, namely the dot product of keys and values so
+        # that we never explicitly compute the attention matrix and thus
+        # decrease the complexity
+        kv = torch.matmul(k, v.transpose(-2, -1))  # [Batch, Head, SeqLen, SeqLen]
+
+        # Sum the K tensor along the second dimension (sequence_length)
+        k_sum = k.sum(dim=2)
+
+        # Compute the normalizer Z using matrix multiplication
+        # Transpose K_sum to have shape (num_heads, 1, head_dim)
+        k_sum_transposed = k_sum.unsqueeze(1)  # [Batch, 1, Head, Dims]
+
+        # compute the normalizer Z
+        print(f"{q.shape=}")
+        print(f"{k_sum_transposed.shape=}")
+        z = 1 / (torch.matmul(q, k_sum_transposed) + self.eps)  # [Batch, Head, SeqLen, 1]
+        print(z.shape)
+        # Reshape Z to have shape (num_heads, sequence_length, 1, 1)
+        z_reshaped = z.unsqueeze(-1).unsqueeze(-1)
+
+        # compute the new values V
+        print(f"{q.unsqueeze(-2).shape=}")
+        v = torch.matmul(q.unsqueeze(-2), kv) * z_reshaped  # [Batch, Head, SeqLen, Dims]
+
+        v = v.permute(0, 2, 1, 3)  # [Batch, SeqLen, Head, Dims]
+        v = v.reshape(batch_size, seq_length, self.embed_dim)  # [Batch, SeqLen, Dims]
+
+        # TODO: maybe use V.continuous
+
+        o = self.o_proj(v)  # [Batch, SeqLen, Dims]
+
+        return o
+
+
+class LinearEncoderBlock(nn.Module):
+    def __init__(
+        self,
+        input_dim,
+        num_heads,
+        dim_feedforward,
+        dropout=0.0,
+        enable_layer_norm=True,
+        feature_map="elu",
+    ):
+        super().__init__()
+
+        self.self_attn = LinearAttention(
+            input_dim=input_dim, embed_dim=input_dim, num_heads=num_heads, feature_map=feature_map
+        )
+
+        # Two-layer MLP
+        self.linear_net = nn.Sequential(
+            nn.Linear(input_dim, dim_feedforward),
+            nn.Dropout(dropout),
+            nn.ReLU(inplace=True),
+            nn.Linear(dim_feedforward, input_dim),
+        )
+
+        # Layers to apply in between the main layers
+        logger.info(f"layer norm enabled: {enable_layer_norm}")
+        if enable_layer_norm:
+            self.norm1 = nn.LayerNorm(input_dim)
+            self.norm2 = nn.LayerNorm(input_dim)
+        else:
+            logger.warning("layer norm disabled")
+            self.norm1 = nn.Identity()
+            self.norm2 = nn.Identity()
+        self.dropout = nn.Dropout(dropout)
+
+    def forward(self, x, mask=None):
+        # Attention part
+        attn_out = self.self_attn(x, mask=mask)
+        # add and norm
+        x = x + self.dropout(attn_out)
+        x = self.norm1(x)
+
+        # MLP part
+        # feed forward
+        linear_out = self.linear_net(x)
+        # add and norm
+        x = x + self.dropout(linear_out)
+        x = self.norm2(x)
+
+        return x
+
+
+class LinearTransformerEncoder(nn.Module):
+    def __init__(self, num_layers, **block_args):
+        super().__init__()
+        self.layers = nn.ModuleList([LinearEncoderBlock(**block_args) for _ in range(num_layers)])
+
+    def forward(self, x, mask=None):
+        # sequentially pass the input through all layers
+        for layer in self.layers:
+            x = layer(x, mask=mask)
+        return x
+
+    def get_attention_maps(self, x, mask=None):
+        # returns a list of attention maps for each layer
+        attention_maps = []
+        for layer in self.layers:
+            _, attn_map = layer.self_attn(x, mask=mask, return_attention=True)
+            attention_maps.append(attn_map)
+            x = layer(x)
+        return attention_maps
+
+
 # see https://github.com/idiap/fast-transformers
 class LinearTransformerAnomalyDetector(pl.LightningModule):
     def __init__(
@@ -488,20 +647,21 @@ class LinearTransformerAnomalyDetector(pl.LightningModule):
     def _create_model(self):
         self.front_linear = nn.Linear(self.hparams.input_dim, self.hparams.block_input_dim)
 
-        # TODO: add keyword to disable all layernorm
-        # now doing it manuall
-        builder = TransformerEncoderBuilder.from_kwargs(
-            attention_type="linear",
-            n_layers=self.hparams.block_args["num_layers"],
-            n_heads=self.hparams.block_args["num_heads"],
-            query_dimensions=self.hparams.block_args["input_dim"],
-            value_dimensions=self.hparams.block_args["input_dim"],
-            feed_forward_dimensions=self.hparams.block_args["dim_feedforward"],
-            final_normalization=self.hparams.block_args["enable_layer_norm"],
-            dropout=self.hparams.dropout,
-        )
-        self.transformer_encoder = builder.get()
+        # builder = TransformerEncoderBuilder.from_kwargs(
+        #     attention_type="linear",
+        #     n_layers=self.hparams.block_args["num_layers"],
+        #     n_heads=self.hparams.block_args["num_heads"],
+        #     query_dimensions=self.hparams.block_args["input_dim"],
+        #     value_dimensions=self.hparams.block_args["input_dim"],
+        #     feed_forward_dimensions=self.hparams.block_args["dim_feedforward"],
+        #     final_normalization=self.hparams.block_args["enable_layer_norm"],
+        #     dropout=self.hparams.dropout,
+        # )
+        # self.transformer_encoder = builder.get()
         # print(self.transformer_encoder )
+        self.transformer_encoder = LinearTransformerEncoder(
+            **self.hparams.block_args,
+        )
 
         # positional encoding
         logger.info(f"positional encoding enabled: {self.hparams.positional_encoder_args['enable']}")
