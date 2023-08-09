@@ -1,0 +1,13 @@
+block_args:
+  dim_feedforward: 16
+  enable_layer_norm: true
+  input_dim: 8
+  num_layers: 1
+block_input_dim: 8
+dropout: 0.0
+input_dim: 2
+learning_rate: 0.1
+num_layers: 1
+positional_encoder_args:
+  enable: false
+  max_len: 8
