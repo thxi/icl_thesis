@@ -481,14 +481,11 @@ class LinearAttention(nn.Module):
         self,
         input_dim,
         embed_dim,
-        num_heads,
         eps=1e-6,
         feature_map="elu",
     ):
         super().__init__()
         self.embed_dim = embed_dim
-        self.num_heads = num_heads
-        self.head_dim = embed_dim // num_heads
         # a small number to ensure the numerical stability of the denominator
         self.eps = eps
         self.qkv_proj = nn.Linear(input_dim, 3 * embed_dim, bias=False)
@@ -507,41 +504,32 @@ class LinearAttention(nn.Module):
         if mask is not None:
             raise NotImplementedError("mask is not supported yet")
         qkv = self.qkv_proj(x)  # [Batch, SeqLen, 3 * Dims]
-        print(qkv.shape)
 
         # Separate Q, K, V from linear output
-        qkv = qkv.reshape(batch_size, seq_length, self.num_heads, 3 * self.head_dim)
-        qkv = qkv.permute(0, 2, 1, 3)  # [Batch, Head, SeqLen, Dims]
-        q, k, v = qkv.chunk(3, dim=-1)  # 3*[Batch, Head, SeqLen, Dims]
+        q, k, v = qkv.chunk(3, dim=-1)  # 3*[Batch, SeqLen, Dims]
         q = self.feature_map(q)
         k = self.feature_map(k)
 
         # Compute the KV matrix, namely the dot product of keys and values so
         # that we never explicitly compute the attention matrix and thus
         # decrease the complexity
-        kv = torch.matmul(k, v.transpose(-2, -1))  # [Batch, Head, SeqLen, SeqLen]
+        kv = torch.matmul(k, v.transpose(-2, -1))  # [Batch, SeqLen, SeqLen]
 
         # Sum the K tensor along the second dimension (sequence_length)
-        k_sum = k.sum(dim=2)
+        k_sum = k.sum(dim=1)
 
         # Compute the normalizer Z using matrix multiplication
-        # Transpose K_sum to have shape (num_heads, 1, head_dim)
-        k_sum_transposed = k_sum.unsqueeze(1)  # [Batch, 1, Head, Dims]
+        # Transpose K_sum to have shape (1, Dim)
+        # k_sum_unsqueezed = k_sum.unsqueeze(1)  # [Batch, 1, Dims]
+        k_sum_unsqueezed = k_sum.unsqueeze(2)  # [Batch, Dims, 1]
 
         # compute the normalizer Z
-        print(f"{q.shape=}")
-        print(f"{k_sum_transposed.shape=}")
-        z = 1 / (torch.matmul(q, k_sum_transposed) + self.eps)  # [Batch, Head, SeqLen, 1]
-        print(z.shape)
-        # Reshape Z to have shape (num_heads, sequence_length, 1, 1)
-        z_reshaped = z.unsqueeze(-1).unsqueeze(-1)
+        qq = q.transpose(2, 1)
+        z = 1 / (torch.matmul(qq, k_sum_unsqueezed) + self.eps)  # [Batch, SeqLen, 1]
 
         # compute the new values V
-        print(f"{q.unsqueeze(-2).shape=}")
-        v = torch.matmul(q.unsqueeze(-2), kv) * z_reshaped  # [Batch, Head, SeqLen, Dims]
-
-        v = v.permute(0, 2, 1, 3)  # [Batch, SeqLen, Head, Dims]
-        v = v.reshape(batch_size, seq_length, self.embed_dim)  # [Batch, SeqLen, Dims]
+        numerator = torch.matmul(q, kv)
+        v = numerator * z  # [Batch, SeqLen, Dims]
 
         # TODO: maybe use V.continuous
 
@@ -554,7 +542,6 @@ class LinearEncoderBlock(nn.Module):
     def __init__(
         self,
         input_dim,
-        num_heads,
         dim_feedforward,
         dropout=0.0,
         enable_layer_norm=True,
@@ -562,9 +549,7 @@ class LinearEncoderBlock(nn.Module):
     ):
         super().__init__()
 
-        self.self_attn = LinearAttention(
-            input_dim=input_dim, embed_dim=input_dim, num_heads=num_heads, feature_map=feature_map
-        )
+        self.self_attn = LinearAttention(input_dim=input_dim, embed_dim=input_dim, feature_map=feature_map)
 
         # Two-layer MLP
         self.linear_net = nn.Sequential(
