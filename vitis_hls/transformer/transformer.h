@@ -24,6 +24,16 @@ void attention(const dout_t query_mat[DIM_QUERY * INPUT_EMBEDDING_SIZE],
 // for debugging
 void print_mat(const dout_t* mat, int T1, int T2);
 
+template <typename T, int T1, int T2>
+void print_mat_template(const T mat[T1][T2]) {
+  for (int i = 0; i < T1; i++) {
+    for (int j = 0; j < T2; j++) {
+      printf("%.6f ", mat[i][j]);
+    }
+    printf("\n");
+  }
+}
+
 // matrix multiplication A x B in a naive way
 template <typename T, int T1, int T2, int T3>
 void matmul(const T* A, const T* B, T* result) {
@@ -43,11 +53,13 @@ void matmul(const T* A, const T* B, T* result) {
 
 template <typename T, int S>
 void softmax(const T* A, T* result) {
+  // numerical stability
   T sum = 0;
   for (int i = 0; i < S; i++) {
 #pragma HLS pipeline off
     sum += exp(A[i]);
   }
+  printf("sum: %.6f\n", sum);
   for (int i = 0; i < S; i++) {
 #pragma HLS pipeline off
     result[i] = exp(A[i]) / sum;
