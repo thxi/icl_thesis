@@ -213,11 +213,27 @@ int main() {
   cout << "values_reshaped: " << endl;
   print_mat_template<double, SEQ_LEN, NUM_HEADS * HEAD_DIM>(values_reshaped);
 
+  // transpose again
+  double values_transposed2[NUM_HEADS * HEAD_DIM][SEQ_LEN] = {0};
+  for (int s = 0; s < SEQ_LEN; ++s) {
+    for (int j = 0; j < NUM_HEADS * HEAD_DIM; ++j) {
+      values_transposed2[j][s] = values_reshaped[s][j];
+    }
+  }
+
   // project
   double values_proj[SEQ_LEN][8] = {0};
   matmul<double, SEQ_LEN, NUM_HEADS * HEAD_DIM, 8>(
       TRANSFORMER_ENCODER_LAYERS_0_SELF_ATTN_O_PROJ_WEIGHT,
-      (const double *)values_reshaped, (double *)values_proj);
+      (const double *)values_transposed2, (double *)values_proj);
+  // transpose
+  for (int s = 0; s < SEQ_LEN; ++s) {
+    for (int j = 0; j < s; ++j) {
+      double tmp = values_proj[s][j];
+      values_proj[s][j] = values_proj[j][s];
+      values_proj[j][s] = tmp;
+    }
+  }
   // add bias
   for (int s = 0; s < SEQ_LEN; ++s) {
     add_bias<double, 8>((double *)values_proj[s],
@@ -226,6 +242,53 @@ int main() {
 
   cout << "values_proj: " << endl;
   print_mat_template<double, SEQ_LEN, 8>(values_proj);
+
+  // add residual
+  // TODO: maybe reuse yy array
+  for (int s = 0; s < SEQ_LEN; ++s) {
+    for (int j = 0; j < 8; ++j) {
+      values_proj[s][j] += yy[s][j];
+    }
+  }
+
+  cout << "values_proj + residual: " << endl;
+  print_mat_template<double, SEQ_LEN, 8>(values_proj);
+
+  // transpose again
+  for (int s = 0; s < SEQ_LEN; ++s) {
+    for (int j = 0; j < s; ++j) {
+      double tmp = values_proj[s][j];
+      values_proj[s][j] = values_proj[j][s];
+      values_proj[j][s] = tmp;
+    }
+  }
+
+  cout << "values_proj + residual transposed: " << endl;
+  print_mat_template<double, SEQ_LEN, 8>(values_proj);
+
+  // MLP feed forward
+  double ff1[16][8] = {0};
+  matmul<double, 16, SEQ_LEN, 8>(
+      TRANSFORMER_ENCODER_LAYERS_0_LINEAR_NET_0_WEIGHT,
+      (const double *)values_proj, (double *)ff1);
+
+  for (int o_dim = 0; o_dim < 16; ++o_dim) {
+    for (int s = 0; s < 8; ++s) {
+      ff1[o_dim][s] += TRANSFORMER_ENCODER_LAYERS_0_LINEAR_NET_0_BIAS[o_dim];
+    }
+  }
+
+  // transpose
+  for (int s = 0; s < SEQ_LEN; ++s) {
+    for (int j = 0; j < s; ++j) {
+      double tmp = ff1[s][j];
+      ff1[s][j] = ff1[j][s];
+      ff1[j][s] = tmp;
+    }
+  }
+
+  cout << "ff1: " << endl;
+  print_mat_template<double, 16, 8>(ff1);
 
   return 0;
 }
