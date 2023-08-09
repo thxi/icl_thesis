@@ -1,3 +1,4 @@
+#include <algorithm>
 #include <iostream>
 
 // define static array of numbers from 0 to 9 of type double
@@ -278,17 +279,76 @@ int main() {
     }
   }
 
-  // transpose
+  // transpose + relu
+  double ff1_transposed[8][16] = {0};
   for (int s = 0; s < SEQ_LEN; ++s) {
-    for (int j = 0; j < s; ++j) {
-      double tmp = ff1[s][j];
-      ff1[s][j] = ff1[j][s];
-      ff1[j][s] = tmp;
+    for (int j = 0; j < 16; ++j) {
+      ff1_transposed[s][j] = std::max(ff1[j][s], 0.0);
     }
   }
 
-  cout << "ff1: " << endl;
-  print_mat_template<double, 16, 8>(ff1);
+  cout << "ff1_transposed: " << endl;
+  print_mat_template<double, 8, 16>(ff1_transposed);
+
+  // ff2
+  double ff2[8][8] = {0};
+
+  matmul<double, 8, 16, 8>(TRANSFORMER_ENCODER_LAYERS_0_LINEAR_NET_3_WEIGHT,
+                           (const double *)ff1, (double *)ff2);
+
+  for (int o_dim = 0; o_dim < 8; ++o_dim) {
+    for (int s = 0; s < 8; ++s) {
+      ff2[o_dim][s] += TRANSFORMER_ENCODER_LAYERS_0_LINEAR_NET_3_BIAS[o_dim];
+    }
+  }
+
+  // transpose
+  for (int s = 0; s < SEQ_LEN; ++s) {
+    for (int j = 0; j < s; ++j) {
+      double tmp = ff2[s][j];
+      ff2[s][j] = ff2[j][s];
+      ff2[j][s] = tmp;
+    }
+  }
+
+  cout << "ff2_transposed: " << endl;
+  print_mat_template<double, 8, 8>(ff2);
+
+  // transpose o_proj + residual
+  for (int s = 0; s < SEQ_LEN; ++s) {
+    for (int j = 0; j < s; ++j) {
+      double tmp = values_proj[s][j];
+      values_proj[s][j] = values_proj[j][s];
+      values_proj[j][s] = tmp;
+    }
+  }
+
+  // add residual
+  for (int s = 0; s < SEQ_LEN; ++s) {
+    for (int j = 0; j < 8; ++j) {
+      ff2[s][j] += values_proj[s][j];
+    }
+  }
+
+  cout << "ff2_transposed + residual: " << endl;
+  print_mat_template<double, 8, 8>(ff2);
+
+  // transpose again
+  for (int s = 0; s < SEQ_LEN; ++s) {
+    for (int j = 0; j < s; ++j) {
+      double tmp = ff2[s][j];
+      ff2[s][j] = ff2[j][s];
+      ff2[j][s] = tmp;
+    }
+  }
+
+  // calculate output, only need 1 value
+  double out = FINAL_LINEAR_BIAS[0];
+  for (int s = 0; s < SEQ_LEN; ++s) {
+    out += FINAL_LINEAR_WEIGHT[s] * ff2[s][0];
+  }
+
+  cout << "out: " << out << endl;
 
   return 0;
 }
