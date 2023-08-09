@@ -1,19 +1,14 @@
 import logging
 import math
 
+import lightning.pytorch as pl
 import numpy as np
-
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
 
-import lightning.pytorch as pl
-
-# import pytorch_lightning as pl
-
-from fast_transformers.builders import TransformerEncoderBuilder
-
 from .utils import get_metrics
+
 
 # configure logger
 logger = logging.getLogger(__name__)
