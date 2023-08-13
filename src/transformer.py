@@ -1,20 +1,19 @@
 import logging
 import math
 
-import lightning.pytorch as pl
-import numpy as np
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
 
-from .utils import get_metrics
-
+from .utils import MetricsMixin
 
 # configure logger
 logger = logging.getLogger(__name__)
+logger.setLevel(logging.INFO)
 
 
-# implemented as in https://uvadlc-notebooks.readthedocs.io/en/latest/tutorial_notebooks/tutorial6/Transformers_and_MHAttention.html
+# implemented as in
+# https://uvadlc-notebooks.readthedocs.io/en/latest/tutorial_notebooks/tutorial6/Transformers_and_MHAttention.html
 
 
 def scaled_dot_product(q, k, v, mask=None):
@@ -224,90 +223,6 @@ class PositionalEncoding(nn.Module):
     def forward(self, x):
         x = x + self.pe[:, : x.size(1)]
         return x
-
-
-# track grad norm in ligthning 2.0
-# https://github.com/Lightning-AI/lightning/issues/1462#issuecomment-1190253742
-class GradNormCallback(pl.Callback):
-    """
-    Logs the gradient norm.
-    """
-
-    def gradient_norm(model):
-        total_norm = 0.0
-        for p in model.parameters():
-            if p.grad is not None:
-                param_norm = p.grad.detach().data.norm(2)
-                total_norm += param_norm.item() ** 2
-        total_norm = total_norm ** (1.0 / 2)
-        return total_norm
-
-    def on_after_backward(self, trainer, model):
-        model.log("my_model/grad_norm", GradNormCallback.gradient_norm(model))
-
-
-class MetricsMixin(pl.LightningModule):
-    def __init__(self):
-        super().__init__()
-        self.training_step_outputs = []
-        self.validation_step_outputs = []
-
-    def training_step(self, batch, batch_idx):
-        x_batch, y_batch = batch
-        y_pred = self(x_batch)
-        loss = self.loss_fn(y_pred, y_batch)
-        self.training_step_outputs.append((loss, x_batch, y_batch))
-        return loss
-
-    def validation_step(self, batch, batch_idx):
-        x_batch, y_batch = batch
-        y_pred = self(x_batch)
-        loss = self.loss_fn(y_pred, y_batch)
-        self.validation_step_outputs.append((loss, x_batch, y_batch))
-        return loss
-
-    def on_train_epoch_end(self):
-        step_outputs = self.training_step_outputs
-        self._epoch_end(step_outputs, mode="train")
-
-    def on_validation_epoch_end(self):
-        step_outputs = self.validation_step_outputs
-        self._epoch_end(step_outputs, mode="val")
-
-    def _epoch_end(self, step_outputs, mode):
-        res_dict = {}
-        # self.eval()
-        test_loss = 0
-        num_batches = 0
-
-        all_y = []
-        all_y_pred = []
-        with torch.no_grad():
-            for loss, x_batch, y_batch in step_outputs:
-                y_pred = self(x_batch)
-                all_y.append(y_batch)
-
-                test_loss += loss.item()
-
-                # convert logits to labels
-                y_pred = y_pred.reshape(-1)
-                y_pred = (y_pred > 0).int()
-                all_y_pred.append(y_pred)
-                num_batches += 1
-
-        test_loss /= num_batches
-        res_dict["loss"] = test_loss
-        all_y = torch.cat(all_y)
-        all_y_pred = torch.cat(all_y_pred)
-        res_dict = res_dict | get_metrics(y_true=all_y.cpu().numpy(), y_pred=all_y_pred.cpu().numpy())
-
-        for k, v in res_dict.items():
-            self.log(f"{mode}_{k}", np.float32(v))
-
-        if mode == "val":
-            self.validation_step_outputs.clear()
-        else:
-            self.training_step_outputs.clear()
 
 
 class TransformerAnomalyDetector(MetricsMixin):

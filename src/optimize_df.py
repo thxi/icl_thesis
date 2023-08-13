@@ -1,6 +1,6 @@
+import gc
 import sys
 from typing import List
-import gc
 
 import pandas as pd
 
