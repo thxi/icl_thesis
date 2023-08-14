@@ -142,14 +142,15 @@ def prepare_dataset_for_evaluation(
     dataset_filename = _dataset_name_to_filename[dataset_name]
     df = pd.read_parquet(root_data_dir / dataset_filename)
     if dataset_name == "KPI":
-        df = df[df["KPI ID"] == "02e99bd4f6cfb33f"].copy()
-        df = df[df.index > 1.49 * 1e9].copy()
+        df = df[df["KPI ID"] == "02e99bd4f6cfb33f"]
+        df = df[df.index > 1.49 * 1e9]
         df = df.query("timestamp < 1496538120").copy()
         df["time"] = df.index - df.index[0]
         df.dropna(inplace=True)
     elif dataset_name == "FI2010":
-        df = df.query("stock==1 & day==0 & train==1")
-        # df.value = df.value.pct_change()
+        # return df
+        # df = df.query("stock==1 & day==0 & train==1").copy()
+        df = df.query("stock==5 & day==8 & train==1").copy()
     else:
         raise ValueError(f"Unknown dataset name: {dataset_name}")
 
