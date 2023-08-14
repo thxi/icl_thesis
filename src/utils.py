@@ -114,7 +114,8 @@ class GradNormCallback(pl.Callback):
 _dataset_name_to_filename = {
     "KPI": "KPI-Anomaly-Detection/Preliminary_dataset/train.parquet",
     "FI2010": "FI2010/all_with_anomalies.parquet",
-    "NAB": "NAB/NAB_train.parquet",
+    # "NAB": "NAB/processed_ambient_temperature_system_failure.parquet",
+    "NAB": "NAB/processed_nyc_taxi.parquet",
 }
 
 
@@ -148,9 +149,9 @@ def prepare_dataset_for_evaluation(
         df["time"] = df.index - df.index[0]
         df.dropna(inplace=True)
     elif dataset_name == "FI2010":
-        # return df
-        # df = df.query("stock==1 & day==0 & train==1").copy()
         df = df.query("stock==5 & day==8 & train==1").copy()
+    elif dataset_name == "NAB":
+        pass
     else:
         raise ValueError(f"Unknown dataset name: {dataset_name}")
 
@@ -182,6 +183,8 @@ def prepare_dataset_for_evaluation(
     ytr, yva = y[:train_idx], y[train_idx:]
     tr_dataset = TensorDataset(tr, ytr)
     va_dataset = TensorDataset(va, yva)
+
+    logger.warning(f"y_tr mean {ytr.mean()}, y_va mean {yva.mean()}")
 
     logger.info(f"tr_dataset: {len(tr_dataset)}, va_dataset: {len(va_dataset)}")
 
