@@ -74,6 +74,12 @@
 \title{Solving the Collatz conjecture}
 \author{Ilia Sobakinskikh  (CID: 00000000)}
 
+% for the confusion matrix: https://tex.stackexchange.com/a/20284
+\usepackage{tikz}
+\usetikzlibrary{positioning}
+
+
+
 \begin{document}
 \input{title}
 
@@ -455,17 +461,168 @@ TODO:
 
 \section{Architecture and hyperparameters}
 
-use simple gridsearch + plot evaluation metrics
+% use simple gridsearch + plot evaluation metrics
 
-\subsection{Model Fitting}
+Here we will describe the model architecture and the hyperparameters used for the experiments.
 
+In the experiments 3 models were used for comparison:
+\begin{itemize}
+    \item \textbf{Linear Regression} - a simple linear regression model on handcrafted features
+    \item \textbf{Transformer Encoder} - a transformer encoder model on raw time series data
+    \item \textbf{Linear Transformer Encoder} - a linear transformer model on raw time series data
+\end{itemize}
+
+For both transformer models, we used the encoder architectures as described in Section \ref{sec:attention_mechanism}
+with a linear layer on top of the output of the transformer encoder to get the final prediction (i.e., if a sample is an anomaly).
+\begin{remark}
+    The encoder part has positional encoding and layer normalization disabled.
+    We found that the positional encoding does not improve the performance of the model and leads to more
+    unstable training (see Section \ref{sec:training}).
+\end{remark}
+
+The transformer hyperparameters used for the experiments are presented in Table \ref{tab:hyperparameters}.
+
+% TODO: this might change in the future if I find a better architecture
+\begin{table}[h!]
+    \centering
+    \begin{tabular}{|c|c|c|c|c|}
+        \hline
+        Parameter, Model            & Transformer Encoder & Linear Transformer Encoder \\
+        \hline
+        Window Size                 & 8                   & 8                          \\
+        Number of heads             & 8                   & -                          \\
+        Dim. of FeedForward network & 16                  & 16                         \\
+        Number of blocks            & 2                   & 1                          \\
+        \hline
+    \end{tabular}
+    \caption{Hyperparameters}
+    \label{tab:hyperparameters}
+\end{table}
+
+The learning rate was chosen using the learning rate finder \cite{1506.01186} (see Section \ref{sec:learning_rate_finder})
+and the batch size was chosen to be the maximum value that
+fitted the dataset in memory ($2^{13}$ samples).
+
+
+\subsection{Model Fitting} \label{sec:training}
+
+In this section, we will describe the training procedure and the main issues that we encountered and how they were addressed.
+
+\subsubsection{General procedure}
+
+The General process of training a neural network involves iteratively adjusting its
+parameters to minimize a specified loss function.
+This is typically achieved through an optimization algorithm, such as gradient descent.
+
+That is, at each iteration, the parameters of the model $\theta$ are updated as follows:
+\begin{equation} \label{eq:gradient_descent}
+    \theta_{t+1}=\theta_t - \alpha \nabla_{\theta} \mathcal{L}(\theta_t)
+\end{equation}
+
+where $\alpha$ is the learning rate and $\mathcal{L}(\theta_t)$ is the loss function at the $t$-th iteration.
+
+While the general procedure is simple there are multiple methods to improve the convergence of the optimization algorithm,
+which will be described in the following sections.
+
+% TODO: maybe add a section with an optimizer here?
+
+\subsubsection{Learning rate finder} \label{sec:learning_rate_finder}
 % describe learning rate finder
+The learning rate $\alpha$ is one of the most important hyperparameters that determines the step size in parameter space
+during gradient descent optimization. An appropriate learning rate is essential for
+model convergence.
+The problem of choosing the learning rate is a well-known problem in machine learning
+and badly chosen learning rate can lead to either underfitting where the model
+learns too slowly or it can lead to divergence where the parameters are updated too abruptly.
 
-% describe gradient explosion and clipping
+In \cite{1506.01186}, authors proposed a simple method to find an appropriate learning rate
+automatically by plotting the loss function against the learning rate.
+
+The procedure is performed as follows:
+\begin{enumerate}
+    \item Start with a very small learning rate $\alpha$ and increase it at each iteration
+    \item At each iteration, train the model for a few epochs and compute the loss function
+    \item Plot the loss function against the learning rate
+          This plot is crucial in identifying the "sweet spot" in the learning rate range
+          where the loss is decreasing effectively.
+    \item Choose the point on the learning rate vs. loss curve where the
+          loss starts to decrease most steeply.  This point indicates that the model
+          is making the most significant progress towards convergence.
+\end{enumerate}
+
+\begin{remark}
+    While there are no guarantees that the learning rate finder will find the optimal learning rate,
+    it provides a good empirical estimate of the optimal learning rate.
+\end{remark}
+
+Instead of manually plotting the loss function against the learning rate, we used the implementation
+provided in Pytorch Lightning \cite{lightning.ai_2023_lr_finder}.
+
+
+\subsubsection{Gradient explosion and Gradient clipping} \label{sec:gradient_clipping}
+A different challenge of training neural networks is the phenomenon known as the "gradient explosion problem."
+We have found that the gradient explosion problem is especially prevalent in the proposed architectures.
+
+The gradient explosion problem occurs when the gradient of the loss function with respect to the parameters
+becomes too large and the parameters are updated too abruptly (e.g., as in Equation \ref{eq:gradient_descent}).
+This can lead to the model diverging and the loss function increasing instead of decreasing.
+An example of the loss function diverging is presented in Figure \ref{fig:gradient_explosion}.
+
+\begin{figure}[h!]
+    \centering
+    \includegraphics[scale=0.6]{gradient_explosion.png}
+    \caption{Example of gradient explosion at around epoch 115 which leads to the loss function diverging for a few following epochs.}
+    \label{fig:gradient_explosion}
+\end{figure}
+
+To solve the problem of gradient explosion, we used the gradient clipping technique introduced
+in \cite{1211.5063}.
+The idea behind gradient clipping is to clip the gradient to a maximum value $g_{max}$.
+This remediates the problem of gradient explosion because the gradient is bounded and the parameters
+are updated more smoothly.
+
+\subsubsection{Class imbalance and loss functions} \label{sec:class_imbalance}
+
+In anomaly detection task the dataset is often imbalanced, i.e., the number of normal samples
+is much larger than the number of anomalous samples.
+
+This poses a problem for the training of the model because the model can simply learn to predict
+the majority class (i.e., normal samples) and achieve a high accuracy without having
+good recall (refer to Section \ref{sec:metrics} for the description to the metrics).
+
+The loss functions that we use for training is the binary cross-entropy loss function
+\cite{Good_1952}
+which is computed as follows:
+\begin{equation} \label{eq:binary_cross_entropy}
+    \mathcal{L}(\theta)=-\frac{1}{N} \sum_{i=1}^N y_i \log(\hat{y}_i) + (1-y_i) \log(1-\hat{y}_i)
+\end{equation}
+where $y_i$ is the true label and $\hat{y}_i$ is the predicted label.
+
+While the binary cross-entropy loss function is a good choice for the anomaly detection task,
+it does not take into account the class imbalance problem.
+
+A way to solve the class imbalance problem is to use a weigh positive
+samples (i.e., anomalous samples) more than negative samples in the loss function.
+
+So we can modify the loss function as follows:
+\begin{equation} \label{eq:weighted_binary_cross_entropy}
+    \mathcal{L}(\theta)=-\frac{1}{N} \sum_{i=1}^N w_i (y_i \log(\hat{y}_i) + (1-y_i) \log(1-\hat{y}_i))
+\end{equation}
+where $w_i$ is the weight of the $i$-th sample.
+In the experiments, we found that weighting the positive samples 5 times more than the negative samples
+yielded good results for most of the datasets which we used throughout the experiments.
+
+\subsubsection{Training stability: Layer normalization and positional encoding}
+
+While the base transformer encoder architecture uses layer normalization and positional encoding layers,
+we found that they lead to unstable training and worse performance of the model on most
+of the datasets. Hence, we disabled them for the experiments and replaced them with
+identity layers.
+% TODO: maybe just add plots with the loss here?
 
 \section{Datasets}
 
-In this section, the datasets used for evaluation will be described.
+In this section, the datasets used for model training and performance evaluation will be described.
 
 \subsection{Numenta Anomaly Benchmark (NAB)}
 To assess the accuracy of predictions, we use the Numenta Anomaly Benchmark ~\cite{Ahmad2017Unsupervised} dataset,
@@ -542,9 +699,113 @@ An example of the injected outliers is presented in Figure \ref{fig:FI2010_examp
 
 \section{Accuracy}
 
-TODO: describe the main metrics (accuracy, balanced accuracy, F1, Cohen's Kappa, Confusion matrix)
+% TODO: maybe add citations? or is it a common knowledge
+
+In this section, we will describe the main metrics used to evaluate the performance of the anomaly detection models.
+The Transformer encoder model will be compared with the simple linear regression model on handcrafted features
+and with the Linear Transformer model \cite{2006.16236}.
+The inference procedure will be described and the results will be presented.
+
+\subsection{Inference}
+After training the model on the training set as described in Section \ref{sec:training}, we can use the model to make predictions on the test set.
+
+\subsection{Metrics} \label{sec:metrics}
+
+In this section the metrics used to evaluate the performance of the anomaly detection models will be described.
+
+Before we describe the metrics, we need to introduce the confusion matrix and
+the following notation:
+\begin{itemize}
+    \item \textbf{TP} - True Positive calculated as the number of correctly predicted anomalies
+    \item \textbf{TN} - True Negative calculated as the number of correctly predicted non-anomalies
+    \item \textbf{FP} - False Positive which is the number of incorrectly predicted anomalies
+    \item \textbf{FN} - False Negative which is the number of incorrectly predicted non-anomalies
+    \item \textbf{P} - Number of positive samples, i.e., $\textbf{P}=\textbf{TP}+\textbf{FN}$
+    \item \textbf{N} - Number of negative samples, i.e., $\textbf{N}=\textbf{TN}+\textbf{FP}$
+\end{itemize}
+
+The confusion matrix is a table with two rows and two columns that reports the number of false positives, false negatives, true positives, and true negatives.
+
+% https://tex.stackexchange.com/a/20274
+\begin{tikzpicture}[
+        box/.style={draw,rectangle,minimum size=2cm,text width=1.5cm,align=left}]
+    \matrix (conmat) [row sep=.1cm,column sep=.1cm] {
+        \node (tpos) [box,
+            label=left:\( \mathbf{P'} \),
+            label=above:\( \mathbf{P} \),
+        ] {True \\ positive \textbf{TP}};
+         &
+        \node (fneg) [box,
+            label=above:\textbf{n},
+            label=above right:\textbf{total},
+            label=right:\( \mathrm{P}' \)
+        ]{False \\ negative \textbf{FN}};
+        \\
+        \node (fpos) [box,
+            label=left:\( \mathbf{N'} \),
+            label=below left:\textbf{total},
+            label=below:P
+        ] {False \\ positive \textbf{FP}};
+         &
+        \node (tneg) [box,
+            label=right:\( \mathrm{N}' \),
+            label=below:N
+        ] {True \\ negative \textbf{TN}};
+        \\
+    };
+    \node [left=.05cm of conmat,text width=1.5cm,align=right] {\textbf{actual \\ value}};
+    \node [above=.05cm of conmat] {\textbf{prediction outcome}};
+\end{tikzpicture}
+
+The matrix summarizes the predictions from a classification model, i.e.,
+how well the model performed when predicting the class labels for positive
+and negative samples.
+While the matrix presents the most informative view of the performance of the model,
+we still need to summarize the information in the matrix into a single number(s)
+that can be used to compare different models.
+
+In this paper, we will use the following metrics to compare the performance of the anomaly detection models:
+
+\begin{itemize}
+    \item \textbf{Accuracy} is the fraction of predictions that the model got right.
+          It is defined as follows:
+          $$\text{Accuracy}=\frac{\textbf{TP}+\textbf{TN}}{\textbf{TP}+\textbf{TN}+\textbf{FP}+\textbf{FN}}$$
+          While this metric is easy to understand, it is not very informative when the dataset is imbalanced
+          which is the case for the anomaly detection task where the proportion
+          of positive samples is low.
+
+    \item \textbf{Precision} is the fraction of positive predictions that were correct.
+          $$\text{Precision}=\frac{\textbf{TP}}{\textbf{TP}+\textbf{FP}}$$
+          This metric is useful when the cost of false positives is high.
+          For example, in the case of anomaly detection, we want to have
+          a high precision so that we do not have to manually check many false positives
+          or trigger any downstream filtering task too often.
+
+    \item \textbf{Recall} is the fraction of positive samples that were correctly predicted.
+          $$\text{Recall}=\frac{\textbf{TP}}{\textbf{TP}+\textbf{FN}}$$
+          This metric is useful when the cost of false negatives is high.
+          For example, in the case of anomaly detection, we want to minimize the number of false negatives
+          because we do not want to miss any anomalies.
+
+    \item \textbf{F1} is the harmonic mean of precision and recall which ranges from 0 to 1.
+          $$\text{F1}=2\cdot\frac{\text{Precision}\cdot\text{Recall}}{\text{Precision}+\text{Recall}}$$
+          This metric is useful when we want to balance the precision and recall.
+          For example, in the case of anomaly detection, we want to have a high precision
+          so that we do not have to manually check many false positives
+          or trigger any downstream filtering task too often.
+          At the same time, we want to minimize the number of false negatives
+          because we do not want to miss any anomalies.
+
+          The advantage of using this metric instead of the accuracy is that it
+          can be used even when the dataset is highly imbalanced and it would
+          detect if the model performs poorly in terms of precision and/or recall.
+\end{itemize}
+
+
+\subsection{Comparison}
 
 % for metrics example: https://www.mdpi.com/1999-4893/15/10/385`'
+% or this: https://thesis.unipd.it/retrieve/840738c1-c175-4529-b5e5-795b393a36a2/Baron_Alex.pdf
 
 \section{Performance/Speed}
 
