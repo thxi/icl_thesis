@@ -392,27 +392,109 @@ In this section, the main design principles of programming an FPGA board will be
 % TODO: maybe rewrite
 The progress of hardware acceleration devices like field-programmable gate arrays (FPGAs) enables the achievement of high component density and low power consumption, all the while minimizing latency \cite{10.1007/978-3-319-56258-2_14}. They are commonly used to accelerate high-performance, computationally intensive systems (for example, data centers) or to minimize the latency of execution (for example, in high-frequency trading).
 
-\subsection{FPGA development and HLS}
+\subsection{FPGA development} \label{sec:fpga_development}
 
 \subsubsection{Common Terms}
 
-% good guide:
-% https://wiki.york.ac.uk/display/RTS/Vitis+HLS+Knowledge+Base
+In this section, common terms will be introduced.
+The terms will be used throughout Section \ref{sec:fpga_development}.
+It is not required to read all of them at once, but it is recommended to refer to this section
+when a term is not clear and the reader can refer to this section when necessary.
+
+\begin{definition}
+    \textbf{LUT (Look-Up Table)} is a small, fast memory that stores the output of a Boolean function of its inputs.
+    The LUT is the basic building block of an FPGA and is capable of implementing any logic function of N Boolean variables.
+\end{definition}
+\begin{definition}
+    \textbf{BRAM (Block RAM)} is a dedicated two-port memory that can be used to store data.
+\end{definition}
+\begin{definition}
+    \textbf{Clock cycle} is the time between two consecutive rising edges of the clock signal.
+    It is the amount of time between two pulses of an oscillator, a single increment of the
+    central processing unit (CPU) clock during which the smallest unit of processor activity
+    is carried out.
+\end{definition}
+\begin{definition}
+    \textbf{Latency} is the time between the start of an operation and the moment its results become available
+    or the number of clock cycles required to complete an operation.
+    \textbf{Latency of a loop} is the number of clock cycles required to complete one iteration of the loop.
+\end{definition}
+\begin{definition}
+    \textbf{Throughput} is the number of operations that can be completed in a given amount of time.
+\end{definition}
+\begin{definition}
+    \textbf{Initiation Interval (II)} is the number of clock cycles between the start of two consecutive iterations of a loop.
+    That is, it is the maximum rate (in clock cycles) at which loop iterations can be initiated.
+    Initiation interval is different from latency.
+    The reason for this is pipelining which will be described in Section \ref{sec:pipelining}.
+    For a visual explanation, see Figure \ref{fig:latency_vs_ii}.
+\end{definition}
+
+\begin{figure}[h!]
+    \centering
+    \includegraphics[scale=0.7]{iiandlatency.png}
+    \caption{Latency vs Initiation Interval illustration. Source: \cite{VitisYork}}
+    \label{fig:latency_vs_ii}
+\end{figure}
+
+\subsubsection{HLS synthesis} \label{sec:hls_synthesis}
+
+In this section, HLS synthesis will be described ~\cite{AMD2023VitisHLS}.
+It is now the common workflow in the FPGA development because it significantly
+improves the productivity when working with design.
+
+HLS synthesis is a methodology that bridges the gap between high-level programming
+languages, such as C, C++, or OpenCL, and the low-level hardware description languages
+typically used in FPGA design, like Verilog or VHDL. This approach enables developers
+to describe their algorithms and functionality at a higher level of abstraction,
+allowing them to focus on the problem-solving aspect rather than the intricacies of hardware implementation.
+
+The HLS process starts with a high-level description of the desired functionality.
+This description can be written in familiar programming languages (in this case, C++ HLS),
+taking advantage of their abstractions and concise syntax.
+The HLS tool then performs a series of transformations on this high-level description to generate
+an optimized hardware implementation that can be deployed on an FPGA.
+The high-level description is transformed by the HLS tool into a RTL (Register Transfer Level) representation,
+which is the low-level hardware description that defines the behavior of the FPGA.
 
 
 \subsubsection{Simulation, Cosimulation}
 
-% TODO
-A way to design and debug the solution without running it on the board.
+In this section, the processes of \textbf{simulation} and \textbf{cosimulation} will be described.
+In the context of developing for Field-Programmable Gate Arrays (FPGAs),
+simulation and cosimulation are two crucial techniques for verifying and testing the
+functionality of your design before actually programming it onto the FPGA hardware.
 
-\subsubsection{HLS synthesis}
+\begin{definition}
+    \textbf{Simulation} is the process of running a software-based model of your FPGA design on
+    a computer to simulate its behavior.
+    The process is very similar to running a software program on a computer for
+    the purpose of unit testing certain parts of functionality of your code
+    \cite{AMD2023VitisSimCosim}.
+\end{definition}
 
-In this section, HLS synthesis will be described ~\cite{AMD2023VitisHLS}. It is now the common workflow in the FPGA development because it significantly improves the productivity when working with design.
+\begin{remark}
+    Simulation might not always capture all aspects of hardware behavior, such as timing delays, which can be critical on FPGAs.
+\end{remark}
+
+\begin{definition}
+    \textbf{Cosimulation} is a technique that combines simulation of the high-level description with simulation of the generated RTL description.
+    This means that the simulations of both the original high-level code and the RTL representation in parallel, comparing their behavior.
+    The purpose of cosimulation is to ensure that the high-level synthesis tool accurately transformed the high-level description into the desired RTL behavior.
+    \cite{AMD2023VitisSimCosim}.
+\end{definition}
 
 
 \subsection{Common optimizations}
 
 In this section, common optimization techniques and how they are achieved will be introduced.
+
+It is quite common to process data blocks
+(for example, a sequence of samples in anomaly detection) using for loops.
+For loops are usually the main bottleneck in the performance of the design
+and it is the area where most of the optimizations are applied first \cite{AMD2023VitisHLS}.
+
+
 
 % good description of 
 % https://docs.xilinx.com/r/en-US/ug1399-vitis-hls/Loops-Primer
@@ -420,8 +502,11 @@ In this section, common optimization techniques and how they are achieved will b
 % good example of array partition:
 % https://github.com/twaclaw/matmult/tree/master
 
+% good guide:
+% https://wiki.york.ac.uk/display/RTS/Vitis+HLS+Knowledge+Base
 
-\subsubsection{Pipelining}
+
+\subsubsection{Pipelining} \label{sec:pipelining}
 
 % TODO:
 
