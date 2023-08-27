@@ -474,7 +474,8 @@ functionality of your design before actually programming it onto the FPGA hardwa
     a computer to simulate its behavior.
     The process is very similar to running a software program on a computer for
     the purpose of unit testing certain parts of functionality of your code
-    \cite{AMD2023VitisSimCosim}.
+    \cite{AMD2023VitisSimCosim}. That is, the simulation does not
+    involve any RTL code and is simply a software simulation of the high-level description..
 \end{definition}
 
 \begin{remark}
@@ -568,9 +569,62 @@ void toplevel(int* a, int* b, int* c, int len) {
 
 \subsubsection{Loop Unrolling}
 
+Loop unrolling is an optimization technique that involves expanding or unwinding
+loops in code to potentially enable better utilization of hardware resources and/or
+to minimize control flow (branching) in loop iterations.
+This technique is not limited to FPGA development but can be particularly useful
+in optimizing code for FPGA implementations.
+
+Loop unrolling works by duplicating loop iterations (read as \texttt{copy-pasting}).
+This allows utilizing more hardware as the loop body is duplicated multiple times
+and loop iterations will utilize different hardware resources.
+This increase in performance (i.e., throughput) comes at the cost of increased
+resource utilization \cite{AMD2023Pipelining}.
+
+\begin{exa}
+    Consider a simple example of a function which multiplies the
+    input vector of length 4 by a constant, 2:
+    \begin{lstlisting}[language=c++,numbers=none]
+void toplevel(int* a, int* b) {
+	smult: for(int i = 0; i < 4; i++) {
+#pragma UNROLL
+	   b[i] = 2 * a[i];
+	}
+}
+\end{lstlisting}
+
+    The unroll pragma \texttt{\#pragma UNROLL} allows to unroll the loop and execute
+    the loop iterations in parallel.
+
+    The unrolled version of the loop will be equivalent to the following code:
+
+    \begin{lstlisting}[language=c++,numbers=none]
+void toplevel(int* a, int* b) {
+	b[0] = 2 * a[0];
+	b[1] = 2 * a[1];
+	b[2] = 2 * a[2];
+	b[3] = 2 * a[3];
+}
+\end{lstlisting}
+
+\end{exa}
+
+\begin{remark}
+    It might not be possible to unroll a loop.
+    For example, if the trip count is not known at compile time then the loop cannot be unrolled.
+    Sometimes it is possible to unroll a loop partially. The unroll pragma allows to specify
+    the factor of unrolling, i.e., how many iterations to unroll.
+    For example, \texttt{\#pragma UNROLL factor=2} will only duplicate the loop body
+    so that there are 2 of them.
+\end{remark}
 
 % TODO: Loop Pipelining and unrolling
 % TODO: nested loops behaviour (see loop pipelining section)
+
+\subsubsection{Function Inlining}
+
+% not specific to FPGA, but can be useful
+% https://wiki.york.ac.uk/display/RTS/Practical+4+-+Vitis+HLS
 
 
 % good example of array partition:
@@ -583,7 +637,7 @@ void toplevel(int* a, int* b, int* c, int len) {
 % https://docs.xilinx.com/r/en-US/ug1399-vitis-hls/Arrays-Primer
 % https://docs.xilinx.com/r/en-US/ug1399-vitis-hls/Array-Accesses-and-Performance
 
-TODO: Partitioning
+TODO: Partitioning (block, cyclic, complete)
 
 \subsubsection{Streams}
 
@@ -594,6 +648,28 @@ TODO:
 % https://docs.xilinx.com/r/en-US/ug1399-vitis-hls/Memory-Mapped-Interface
 
 % https://docs.xilinx.com/r/en-US/ug1399-vitis-hls/Optimizing-AXI-System-Performance
+
+
+\subsubsection{Example of optimized matrix multiplication}
+
+
+% this is quite a cool video that goes into the details
+% https://www.youtube.com/watch?v=JeERDmY2qkU
+
+% biggest problem: partitioning the B array if pipeline the outer loop
+% good choice - j loop because you combine the pipeline + partition
+% + loop unrolling (implied)
+
+% then: more efficient partitioning (or reshaping) trick
+
+
+% TODO: performance metric
+
+% maybe add as further steps blocked matrix mult
+% but don't need to do it here because it fits into memory
+% anyway
+% maybe also add vector types hls::vector<DTYPE, DSIZE>
+% TODO: transpose matrix A before for vector types (so that can fetch at consecutive address)
 
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
