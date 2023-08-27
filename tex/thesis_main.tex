@@ -425,9 +425,13 @@ when a term is not clear and the reader can refer to this section when necessary
 \begin{definition}
     \textbf{Initiation Interval (II)} is the number of clock cycles between the start of two consecutive iterations of a loop.
     That is, it is the maximum rate (in clock cycles) at which loop iterations can be initiated.
+    In the ideal case, the II is equal to 1 so that we can start a new iteration of the loop every clock cycle.
     Initiation interval is different from latency.
     The reason for this is pipelining which will be described in Section \ref{sec:pipelining}.
     For a visual explanation, see Figure \ref{fig:latency_vs_ii}.
+\end{definition}
+\begin{definition}
+    \textbf{Trip count} is simply the number of iterations of a loop.
 \end{definition}
 
 \begin{figure}[h!]
@@ -495,24 +499,34 @@ For loops are usually the main bottleneck in the performance of the design
 and it is the area where most of the optimizations are applied first \cite{AMD2023VitisHLS}.
 
 
+\subsubsection{Loop Pipelining} \label{sec:loop_pipelining}
 
-% good description of 
-% https://docs.xilinx.com/r/en-US/ug1399-vitis-hls/Loops-Primer
+% sounds very general to me....
+Loop pipelining is a technique used in FPGAs programming to optimize the performance of sequential operations within a loop.
+It improves the throughput of loops by breaking them down into multiple stages
+that can execute concurrently.
+That is, it allows to start the next iteration of a loop before the current
+iteration has finished \cite{AMD2023Pipelining}.
+Refer to Figure \ref{fig:loop_pipelining} and Figure \ref{fig:latency_vs_ii} for a visual illustration.
 
-% good example of array partition:
-% https://github.com/twaclaw/matmult/tree/master
-
-% good guide:
-% https://wiki.york.ac.uk/display/RTS/Vitis+HLS+Knowledge+Base
+% also good examples here
+% https://wiki.york.ac.uk/display/RTS/Practical+4+-+Vitis+HLS
 
 
-\subsubsection{Pipelining} \label{sec:pipelining}
+\begin{figure}[h!]
+    \centering
+    \includegraphics[scale=0.7]{loop_pipelining.png}
+    \caption{Loop pipelining illustration. Source: \cite{AMD2023Pipelining}}
+    \label{fig:loop_pipelining}
+\end{figure}
 
-% TODO:
 
-Example code:
-\begin{lstlisting}[language=c++,numbers=none]
-void toplevel(din_t* a, din_t* b, dout_t* c, int len) {
+% TODO: maybe just leave it as normal text without using \begin{exa}
+% the style is a bit strange...
+\begin{exa}
+    Consider example of pipelining a simple for loop which adds 2 vectors (\cite{AMD2023Pipelining}):
+    \begin{lstlisting}[language=c++,numbers=none]
+void toplevel(int* a, int* b, int* c, int len) {
 	vadd: for(int i = 0; i < len; i++) {
 #pragma HLS PIPELINE
 	   c[i] = a[i] + b[i];
@@ -520,8 +534,50 @@ void toplevel(din_t* a, din_t* b, dout_t* c, int len) {
 }
 \end{lstlisting}
 
+    Taking the reference numbers from \cite{AMD2023Pipelining},
+    assume that len is 20 and that one loop iteration takes 3 clock cycles,
+    then the total latency of the loop is 60 clock cycles without pipelining.
+
+    The pipelining pragma \texttt{\#pragma HLS PIPELINE} allows to start
+    the next iteration of the loop before the current iteration has finished.
+
+    By default, the pipelining pragma will try to achieve an II of 1 but this
+    can be specified manually by using the \texttt{II} parameter.
+
+    % a dumb simple example of calculations: https://support.xilinx.com/s/question/0D52E00006hprvzSAA/hls-loop-pipeline-and-iteration-latency?language=en_US
+    % and also a dumb example with formula for different II: https://www.intel.com/content/www/us/en/docs/programmable/683152/21-3/pipeline-loops.html
+    So, the pipelining pragma reduces the latency of the loop to 22 clock cycles.
+
+    In general, the latency of a loop with pipelining is given by the following formula:
+    \begin{equation}
+        \text{Latency} = \text{II} \cdot (\text{Trip Count} - 1) + \text{Loop Body Latency}
+    \end{equation}
+\end{exa}
+
+\begin{remark}
+    It is not always possible to achieve an II of 1.
+    This is because of the dependencies between the iterations of the loop.
+    For example, if the loop body depends on the result of the previous iteration,
+    then the II cannot be 1 and we have to wait until the previous iteration has finished
+    before starting the next one.
+\end{remark}
+
+% good description of 
+% https://docs.xilinx.com/r/en-US/ug1399-vitis-hls/Loops-Primer
+
+
 \subsubsection{Loop Unrolling}
 
+
+% TODO: Loop Pipelining and unrolling
+% TODO: nested loops behaviour (see loop pipelining section)
+
+
+% good example of array partition:
+% https://github.com/twaclaw/matmult/tree/master
+
+% good guide:
+% https://wiki.york.ac.uk/display/RTS/Vitis+HLS+Knowledge+Base
 
 \subsubsection{Arrays}
 % https://docs.xilinx.com/r/en-US/ug1399-vitis-hls/Arrays-Primer
