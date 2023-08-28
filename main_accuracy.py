@@ -40,8 +40,14 @@ batch_size = 2 * 4096
 window_size = 8
 train_proportion = 0.9
 
+override_dicts = {
+    ("Transformer", "NAB"): {
+        "epochs": 110,
+    }
+}
 
-def get_model(model_name, input_dim, window_size=8):
+
+def get_model(model_name, input_dim, window_size=8, override_params_dict=None):
     ret_dict = {"model": None, "epochs": None, "gradient_clip_val": None, "max_lr": 1}
     loss_fn = nn.BCEWithLogitsLoss(pos_weight=torch.tensor(5))
     if model_name == "Transformer":
@@ -125,6 +131,10 @@ def get_model(model_name, input_dim, window_size=8):
         ret_dict["max_lr"] = 0.1
     else:
         raise ValueError(f"Unknown model name: {model_name}")
+    if override_params_dict is not None:
+        logger.info(f"Overriding model params with: {override_params_dict}")
+        for k, v in override_params_dict.items():
+            ret_dict[k] = v
 
     return ret_dict
 
@@ -132,7 +142,6 @@ def get_model(model_name, input_dim, window_size=8):
 def main(model_name, dataset_name):
     seed_everything(1)
 
-    dataset_name = "KPI"
     tr_dl, va_dl, tr_cols = prepare_dataset_for_evaluation(
         dataset_name=dataset_name,
         window_size=window_size,
@@ -141,7 +150,9 @@ def main(model_name, dataset_name):
         root_data_dir=ROOT_DATA_DIR,
     )
 
-    model_dict = get_model(model_name, input_dim=len(tr_cols))
+    override_params_dict = override_dicts.get((model_name, dataset_name), None)
+
+    model_dict = get_model(model_name, input_dim=len(tr_cols), override_params_dict=override_params_dict)
     model = model_dict["model"]
     epochs = model_dict["epochs"]
     gradient_clip_val = model_dict["gradient_clip_val"]
@@ -174,3 +185,5 @@ if __name__ == "__main__":
     args = parser.parse_args()
 
     main(model_name=args.model, dataset_name=args.dataset)
+
+    logger.info("Finished main")

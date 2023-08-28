@@ -148,7 +148,7 @@ def prepare_dataset_for_evaluation(
         df["time"] = df.index - df.index[0]
         df.dropna(inplace=True)
     elif dataset_name == "FI2010":
-        df = df.query("stock==5 & day==8 & train==1").copy()
+        df = df.query("stock==1 & day==1 & train==1").copy()
     elif dataset_name == "NAB":
         pass
     else:
