@@ -15,7 +15,6 @@ from torch.utils.data import DataLoader, TensorDataset
 
 
 logger = logging.getLogger(__name__)
-logger.setLevel(logging.INFO)
 
 
 class MetricTracker(pl.Callback):
@@ -229,11 +228,12 @@ def get_metrics_from_tracker(metrics_tracker: MetricTracker):
 def plot_metrics_from_tracker(res, dataset_name=None, filename=None):
     import scienceplots  # noqa # pylint: disable=unused-import
 
-    # with plt.style.context(["science", "ieee", "default"]):
-    with plt.style.context(["science", "ieee"]):
+    # with plt.style.context(["science", "ieee"]):
+    # with plt.style.context(["ieee"]):
+    with plt.style.context(["default"]):
         plt.rcParams.update({"axes.grid": True})
 
-        fig, axs = plt.subplots(2, 2, figsize=(8, 8))
+        fig, axs = plt.subplots(2, 2, figsize=(12, 12))
         if dataset_name is not None or dataset_name != "":
             fig.suptitle(dataset_name)
 
@@ -248,19 +248,16 @@ def plot_metrics_from_tracker(res, dataset_name=None, filename=None):
         plt.plot(res["val_f1"], label="Validation")
         plt.title("F1")
         plt.xlabel("Epoch")
-        plt.legend()
         plt.sca(axs[1, 0])
         plt.plot(res["train_precision"], label="Train")
         plt.plot(res["val_precision"], label="Validation")
         plt.title("Precision")
         plt.xlabel("Epoch")
-        plt.legend()
         plt.sca(axs[1, 1])
         plt.plot(res["train_recall"], label="Train")
         plt.plot(res["val_recall"], label="Validation")
         plt.title("Recall")
         plt.xlabel("Epoch")
-        plt.legend()
         fig.tight_layout()
 
         if filename is not None:
