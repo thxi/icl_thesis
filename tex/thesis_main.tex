@@ -74,6 +74,12 @@
 \title{Solving the Collatz conjecture}
 \author{Ilia Sobakinskikh  (CID: 00000000)}
 
+% for the confusion matrix: https://tex.stackexchange.com/a/20284
+\usepackage{tikz}
+\usetikzlibrary{positioning}
+
+
+
 \begin{document}
 \input{title}
 
@@ -386,42 +392,142 @@ In this section, the main design principles of programming an FPGA board will be
 % TODO: maybe rewrite
 The progress of hardware acceleration devices like field-programmable gate arrays (FPGAs) enables the achievement of high component density and low power consumption, all the while minimizing latency \cite{10.1007/978-3-319-56258-2_14}. They are commonly used to accelerate high-performance, computationally intensive systems (for example, data centers) or to minimize the latency of execution (for example, in high-frequency trading).
 
-\subsection{FPGA development and HLS}
+\subsection{FPGA development} \label{sec:fpga_development}
 
 \subsubsection{Common Terms}
 
-% good guide:
-% https://wiki.york.ac.uk/display/RTS/Vitis+HLS+Knowledge+Base
+In this section, common terms will be introduced.
+The terms will be used throughout Section \ref{sec:fpga_development}.
+It is not required to read all of them at once, but it is recommended to refer to this section
+when a term is not clear and the reader can refer to this section when necessary.
+
+\begin{definition}
+    \textbf{LUT (Look-Up Table)} is a small, fast memory that stores the output of a Boolean function of its inputs.
+    The LUT is the basic building block of an FPGA and is capable of implementing any logic function of N Boolean variables.
+\end{definition}
+\begin{definition}
+    \textbf{BRAM (Block RAM)} is a dedicated two-port memory that can be used to store data.
+\end{definition}
+\begin{definition}
+    \textbf{Clock cycle} is the time between two consecutive rising edges of the clock signal.
+    It is the amount of time between two pulses of an oscillator, a single increment of the
+    central processing unit (CPU) clock during which the smallest unit of processor activity
+    is carried out.
+\end{definition}
+\begin{definition}
+    \textbf{Latency} is the time between the start of an operation and the moment its results become available
+    or the number of clock cycles required to complete an operation.
+    \textbf{Latency of a loop} is the number of clock cycles required to complete one iteration of the loop.
+\end{definition}
+\begin{definition}
+    \textbf{Throughput} is the number of operations that can be completed in a given amount of time.
+\end{definition}
+\begin{definition}
+    \textbf{Initiation Interval (II)} is the number of clock cycles between the start of two consecutive iterations of a loop.
+    That is, it is the maximum rate (in clock cycles) at which loop iterations can be initiated.
+    In the ideal case, the II is equal to 1 so that we can start a new iteration of the loop every clock cycle.
+    Initiation interval is different from latency.
+    The reason for this is pipelining which will be described in Section \ref{sec:pipelining}.
+    For a visual explanation, see Figure \ref{fig:latency_vs_ii}.
+\end{definition}
+\begin{definition}
+    \textbf{Trip count} is simply the number of iterations of a loop.
+\end{definition}
+
+\begin{figure}[h!]
+    \centering
+    \includegraphics[scale=0.7]{iiandlatency.png}
+    \caption{Latency vs Initiation Interval illustration. Source: \cite{VitisYork}}
+    \label{fig:latency_vs_ii}
+\end{figure}
+
+\subsubsection{HLS synthesis} \label{sec:hls_synthesis}
+
+In this section, HLS synthesis will be described ~\cite{AMD2023VitisHLS}.
+It is now the common workflow in the FPGA development because it significantly
+improves the productivity when working with design.
+
+HLS synthesis is a methodology that bridges the gap between high-level programming
+languages, such as C, C++, or OpenCL, and the low-level hardware description languages
+typically used in FPGA design, like Verilog or VHDL. This approach enables developers
+to describe their algorithms and functionality at a higher level of abstraction,
+allowing them to focus on the problem-solving aspect rather than the intricacies of hardware implementation.
+
+The HLS process starts with a high-level description of the desired functionality.
+This description can be written in familiar programming languages (in this case, C++ HLS),
+taking advantage of their abstractions and concise syntax.
+The HLS tool then performs a series of transformations on this high-level description to generate
+an optimized hardware implementation that can be deployed on an FPGA.
+The high-level description is transformed by the HLS tool into a RTL (Register Transfer Level) representation,
+which is the low-level hardware description that defines the behavior of the FPGA.
 
 
 \subsubsection{Simulation, Cosimulation}
 
-% TODO
-A way to design and debug the solution without running it on the board.
+In this section, the processes of \textbf{simulation} and \textbf{cosimulation} will be described.
+In the context of developing for Field-Programmable Gate Arrays (FPGAs),
+simulation and cosimulation are two crucial techniques for verifying and testing the
+functionality of your design before actually programming it onto the FPGA hardware.
 
-\subsubsection{HLS synthesis}
+\begin{definition}
+    \textbf{Simulation} is the process of running a software-based model of your FPGA design on
+    a computer to simulate its behavior.
+    The process is very similar to running a software program on a computer for
+    the purpose of unit testing certain parts of functionality of your code
+    \cite{AMD2023VitisSimCosim}. That is, the simulation does not
+    involve any RTL code and is simply a software simulation of the high-level description..
+\end{definition}
 
-In this section, HLS synthesis will be described ~\cite{AMD2023VitisHLS}. It is now the common workflow in the FPGA development because it significantly improves the productivity when working with design.
+\begin{remark}
+    Simulation might not always capture all aspects of hardware behavior, such as timing delays, which can be critical on FPGAs.
+\end{remark}
+
+\begin{definition}
+    \textbf{Cosimulation} is a technique that combines simulation of the high-level description with simulation of the generated RTL description.
+    This means that the simulations of both the original high-level code and the RTL representation in parallel, comparing their behavior.
+    The purpose of cosimulation is to ensure that the high-level synthesis tool accurately transformed the high-level description into the desired RTL behavior.
+    \cite{AMD2023VitisSimCosim}.
+\end{definition}
 
 
 \subsection{Common optimizations}
 
 In this section, common optimization techniques and how they are achieved will be introduced.
 
-% good description of 
-% https://docs.xilinx.com/r/en-US/ug1399-vitis-hls/Loops-Primer
+It is quite common to process data blocks
+(for example, a sequence of samples in anomaly detection) using for loops.
+For loops are usually the main bottleneck in the performance of the design
+and it is the area where most of the optimizations are applied first \cite{AMD2023VitisHLS}.
 
-% good example of array partition:
-% https://github.com/twaclaw/matmult/tree/master
+
+\subsubsection{Loop Pipelining} \label{sec:loop_pipelining}
+
+% sounds very general to me....
+Loop pipelining is a technique used in FPGAs programming to optimize the performance of sequential operations within a loop.
+It improves the throughput of loops by breaking them down into multiple stages
+that can execute concurrently.
+That is, it allows to start the next iteration of a loop before the current
+iteration has finished \cite{AMD2023Pipelining}.
+Refer to Figure \ref{fig:loop_pipelining} and Figure \ref{fig:latency_vs_ii} for a visual illustration.
+
+% also good examples here
+% https://wiki.york.ac.uk/display/RTS/Practical+4+-+Vitis+HLS
 
 
-\subsubsection{Pipelining}
+\begin{figure}[h!]
+    \centering
+    \includegraphics[scale=0.7]{loop_pipelining.png}
+    \caption{Loop pipelining illustration. Source: \cite{AMD2023Pipelining}}
+    \label{fig:loop_pipelining}
+\end{figure}
 
-% TODO:
 
-Example code:
-\begin{lstlisting}[language=c++,numbers=none]
-void toplevel(din_t* a, din_t* b, dout_t* c, int len) {
+% TODO: maybe just leave it as normal text without using \begin{exa}
+% the style is a bit strange...
+\begin{exa}
+    Consider example of pipelining a simple for loop which adds 2 vectors (\cite{AMD2023Pipelining}):
+    \begin{lstlisting}[language=c++,numbers=none]
+void toplevel(int* a, int* b, int* c, int len) {
 	vadd: for(int i = 0; i < len; i++) {
 #pragma HLS PIPELINE
 	   c[i] = a[i] + b[i];
@@ -429,14 +535,109 @@ void toplevel(din_t* a, din_t* b, dout_t* c, int len) {
 }
 \end{lstlisting}
 
+    Taking the reference numbers from \cite{AMD2023Pipelining},
+    assume that len is 20 and that one loop iteration takes 3 clock cycles,
+    then the total latency of the loop is 60 clock cycles without pipelining.
+
+    The pipelining pragma \texttt{\#pragma HLS PIPELINE} allows to start
+    the next iteration of the loop before the current iteration has finished.
+
+    By default, the pipelining pragma will try to achieve an II of 1 but this
+    can be specified manually by using the \texttt{II} parameter.
+
+    % a dumb simple example of calculations: https://support.xilinx.com/s/question/0D52E00006hprvzSAA/hls-loop-pipeline-and-iteration-latency?language=en_US
+    % and also a dumb example with formula for different II: https://www.intel.com/content/www/us/en/docs/programmable/683152/21-3/pipeline-loops.html
+    So, the pipelining pragma reduces the latency of the loop to 22 clock cycles.
+
+    In general, the latency of a loop with pipelining is given by the following formula:
+    \begin{equation}
+        \text{Latency} = \text{II} \cdot (\text{Trip Count} - 1) + \text{Loop Body Latency}
+    \end{equation}
+\end{exa}
+
+\begin{remark}
+    It is not always possible to achieve an II of 1.
+    This is because of the dependencies between the iterations of the loop.
+    For example, if the loop body depends on the result of the previous iteration,
+    then the II cannot be 1 and we have to wait until the previous iteration has finished
+    before starting the next one.
+\end{remark}
+
+% good description of 
+% https://docs.xilinx.com/r/en-US/ug1399-vitis-hls/Loops-Primer
+
+
 \subsubsection{Loop Unrolling}
 
+Loop unrolling is an optimization technique that involves expanding or unwinding
+loops in code to potentially enable better utilization of hardware resources and/or
+to minimize control flow (branching) in loop iterations.
+This technique is not limited to FPGA development but can be particularly useful
+in optimizing code for FPGA implementations.
+
+Loop unrolling works by duplicating loop iterations (read as \texttt{copy-pasting}).
+This allows utilizing more hardware as the loop body is duplicated multiple times
+and loop iterations will utilize different hardware resources.
+This increase in performance (i.e., throughput) comes at the cost of increased
+resource utilization \cite{AMD2023Pipelining}.
+
+\begin{exa}
+    Consider a simple example of a function which multiplies the
+    input vector of length 4 by a constant, 2:
+    \begin{lstlisting}[language=c++,numbers=none]
+void toplevel(int* a, int* b) {
+	smult: for(int i = 0; i < 4; i++) {
+#pragma UNROLL
+	   b[i] = 2 * a[i];
+	}
+}
+\end{lstlisting}
+
+    The unroll pragma \texttt{\#pragma UNROLL} allows to unroll the loop and execute
+    the loop iterations in parallel.
+
+    The unrolled version of the loop will be equivalent to the following code:
+
+    \begin{lstlisting}[language=c++,numbers=none]
+void toplevel(int* a, int* b) {
+	b[0] = 2 * a[0];
+	b[1] = 2 * a[1];
+	b[2] = 2 * a[2];
+	b[3] = 2 * a[3];
+}
+\end{lstlisting}
+
+\end{exa}
+
+\begin{remark}
+    It might not be possible to unroll a loop.
+    For example, if the trip count is not known at compile time then the loop cannot be unrolled.
+    Sometimes it is possible to unroll a loop partially. The unroll pragma allows to specify
+    the factor of unrolling, i.e., how many iterations to unroll.
+    For example, \texttt{\#pragma UNROLL factor=2} will only duplicate the loop body
+    so that there are 2 of them.
+\end{remark}
+
+% TODO: Loop Pipelining and unrolling
+% TODO: nested loops behaviour (see loop pipelining section)
+
+\subsubsection{Function Inlining}
+
+% not specific to FPGA, but can be useful
+% https://wiki.york.ac.uk/display/RTS/Practical+4+-+Vitis+HLS
+
+
+% good example of array partition:
+% https://github.com/twaclaw/matmult/tree/master
+
+% good guide:
+% https://wiki.york.ac.uk/display/RTS/Vitis+HLS+Knowledge+Base
 
 \subsubsection{Arrays}
 % https://docs.xilinx.com/r/en-US/ug1399-vitis-hls/Arrays-Primer
 % https://docs.xilinx.com/r/en-US/ug1399-vitis-hls/Array-Accesses-and-Performance
 
-TODO: Partitioning
+TODO: Partitioning (block, cyclic, complete)
 
 \subsubsection{Streams}
 
@@ -449,16 +650,196 @@ TODO:
 % https://docs.xilinx.com/r/en-US/ug1399-vitis-hls/Optimizing-AXI-System-Performance
 
 
+\subsubsection{Example of optimized matrix multiplication}
+
+
+% this is quite a cool video that goes into the details
+% https://www.youtube.com/watch?v=JeERDmY2qkU
+
+% biggest problem: partitioning the B array if pipeline the outer loop
+% good choice - j loop because you combine the pipeline + partition
+% + loop unrolling (implied)
+
+% then: more efficient partitioning (or reshaping) trick
+
+
+% TODO: performance metric
+
+% maybe add as further steps blocked matrix mult
+% but don't need to do it here because it fits into memory
+% anyway
+% maybe also add vector types hls::vector<DTYPE, DSIZE>
+% TODO: transpose matrix A before for vector types (so that can fetch at consecutive address)
+
+
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 \chapter{Experiments}
 
+
 \section{Architecture and hyperparameters}
 
-use simple gridsearch + plot evaluation metrics
+% use simple gridsearch + plot evaluation metrics
+
+Here we will describe the model architecture and the hyperparameters used for the experiments.
+
+In the experiments 3 models were used for comparison:
+\begin{itemize}
+    \item \textbf{Linear Regression} - a simple linear regression model on handcrafted features
+    \item \textbf{Transformer Encoder} - a transformer encoder model on raw time series data
+    \item \textbf{Linear Transformer Encoder} - a linear transformer model on raw time series data
+\end{itemize}
+
+For both transformer models, we used the encoder architectures as described in Section \ref{sec:attention_mechanism}
+with a linear layer on top of the output of the transformer encoder to get the final prediction (i.e., if a sample is an anomaly).
+\begin{remark}
+    The encoder part has positional encoding and layer normalization disabled.
+    We found that the positional encoding does not improve the performance of the model and leads to more
+    unstable training (see Section \ref{sec:training}).
+\end{remark}
+
+The transformer hyperparameters used for the experiments are presented in Table \ref{tab:hyperparameters}.
+
+% TODO: this might change in the future if I find a better architecture
+\begin{table}[h!]
+    \centering
+    \begin{tabular}{|c|c|c|c|c|}
+        \hline
+        Parameter, Model            & Transformer Encoder & Linear Transformer Encoder \\
+        \hline
+        Window Size                 & 8                   & 8                          \\
+        Number of heads             & 8                   & -                          \\
+        Dim. of FeedForward network & 16                  & 16                         \\
+        Number of blocks            & 2                   & 1                          \\
+        \hline
+    \end{tabular}
+    \caption{Hyperparameters}
+    \label{tab:hyperparameters}
+\end{table}
+
+The learning rate was chosen using the learning rate finder \cite{1506.01186} (see Section \ref{sec:learning_rate_finder})
+and the batch size was chosen to be the maximum value that
+fitted the dataset in memory ($2^{13}$ samples).
+
+
+\subsection{Model Fitting} \label{sec:training}
+
+In this section, we will describe the training procedure and the main issues that we encountered and how they were addressed.
+
+\subsubsection{General procedure}
+
+The General process of training a neural network involves iteratively adjusting its
+parameters to minimize a specified loss function.
+This is typically achieved through an optimization algorithm, such as gradient descent.
+
+That is, at each iteration, the parameters of the model $\theta$ are updated as follows:
+\begin{equation} \label{eq:gradient_descent}
+    \theta_{t+1}=\theta_t - \alpha \nabla_{\theta} \mathcal{L}(\theta_t)
+\end{equation}
+
+where $\alpha$ is the learning rate and $\mathcal{L}(\theta_t)$ is the loss function at the $t$-th iteration.
+
+While the general procedure is simple there are multiple methods to improve the convergence of the optimization algorithm,
+which will be described in the following sections.
+
+% TODO: maybe add a section with an optimizer here?
+
+\subsubsection{Learning rate finder} \label{sec:learning_rate_finder}
+% describe learning rate finder
+The learning rate $\alpha$ is one of the most important hyperparameters that determines the step size in parameter space
+during gradient descent optimization. An appropriate learning rate is essential for
+model convergence.
+The problem of choosing the learning rate is a well-known problem in machine learning
+and badly chosen learning rate can lead to either underfitting where the model
+learns too slowly or it can lead to divergence where the parameters are updated too abruptly.
+
+In \cite{1506.01186}, authors proposed a simple method to find an appropriate learning rate
+automatically by plotting the loss function against the learning rate.
+
+The procedure is performed as follows:
+\begin{enumerate}
+    \item Start with a very small learning rate $\alpha$ and increase it at each iteration
+    \item At each iteration, train the model for a few epochs and compute the loss function
+    \item Plot the loss function against the learning rate
+          This plot is crucial in identifying the "sweet spot" in the learning rate range
+          where the loss is decreasing effectively.
+    \item Choose the point on the learning rate vs. loss curve where the
+          loss starts to decrease most steeply.  This point indicates that the model
+          is making the most significant progress towards convergence.
+\end{enumerate}
+
+\begin{remark}
+    While there are no guarantees that the learning rate finder will find the optimal learning rate,
+    it provides a good empirical estimate of the optimal learning rate.
+\end{remark}
+
+Instead of manually plotting the loss function against the learning rate, we used the implementation
+provided in Pytorch Lightning \cite{lightning.ai_2023_lr_finder}.
+
+
+\subsubsection{Gradient explosion and Gradient clipping} \label{sec:gradient_clipping}
+A different challenge of training neural networks is the phenomenon known as the "gradient explosion problem."
+We have found that the gradient explosion problem is especially prevalent in the proposed architectures.
+
+The gradient explosion problem occurs when the gradient of the loss function with respect to the parameters
+becomes too large and the parameters are updated too abruptly (e.g., as in Equation \ref{eq:gradient_descent}).
+This can lead to the model diverging and the loss function increasing instead of decreasing.
+An example of the loss function diverging is presented in Figure \ref{fig:gradient_explosion}.
+
+\begin{figure}[h!]
+    \centering
+    \includegraphics[scale=0.6]{gradient_explosion.png}
+    \caption{Example of gradient explosion at around epoch 115 which leads to the loss function diverging for a few following epochs.}
+    \label{fig:gradient_explosion}
+\end{figure}
+
+To solve the problem of gradient explosion, we used the gradient clipping technique introduced
+in \cite{1211.5063}.
+The idea behind gradient clipping is to clip the gradient to a maximum value $g_{max}$.
+This remediates the problem of gradient explosion because the gradient is bounded and the parameters
+are updated more smoothly.
+
+\subsubsection{Class imbalance and loss functions} \label{sec:class_imbalance}
+
+In anomaly detection task the dataset is often imbalanced, i.e., the number of normal samples
+is much larger than the number of anomalous samples.
+
+This poses a problem for the training of the model because the model can simply learn to predict
+the majority class (i.e., normal samples) and achieve a high accuracy without having
+good recall (refer to Section \ref{sec:metrics} for the description to the metrics).
+
+The loss functions that we use for training is the binary cross-entropy loss function
+\cite{Good_1952}
+which is computed as follows:
+\begin{equation} \label{eq:binary_cross_entropy}
+    \mathcal{L}(\theta)=-\frac{1}{N} \sum_{i=1}^N y_i \log(\hat{y}_i) + (1-y_i) \log(1-\hat{y}_i)
+\end{equation}
+where $y_i$ is the true label and $\hat{y}_i$ is the predicted label.
+
+While the binary cross-entropy loss function is a good choice for the anomaly detection task,
+it does not take into account the class imbalance problem.
+
+A way to solve the class imbalance problem is to use a weigh positive
+samples (i.e., anomalous samples) more than negative samples in the loss function.
+
+So we can modify the loss function as follows:
+\begin{equation} \label{eq:weighted_binary_cross_entropy}
+    \mathcal{L}(\theta)=-\frac{1}{N} \sum_{i=1}^N w_i (y_i \log(\hat{y}_i) + (1-y_i) \log(1-\hat{y}_i))
+\end{equation}
+where $w_i$ is the weight of the $i$-th sample.
+In the experiments, we found that weighting the positive samples 5 times more than the negative samples
+yielded good results for most of the datasets which we used throughout the experiments.
+
+\subsubsection{Training stability: Layer normalization and positional encoding}
+
+While the base transformer encoder architecture uses layer normalization and positional encoding layers,
+we found that they lead to unstable training and worse performance of the model on most
+of the datasets. Hence, we disabled them for the experiments and replaced them with
+identity layers.
+% TODO: maybe just add plots with the loss here?
 
 \section{Datasets}
 
-In this section, the datasets used for evaluation will be described.
+In this section, the datasets used for model training and performance evaluation will be described.
 
 \subsection{Numenta Anomaly Benchmark (NAB)}
 To assess the accuracy of predictions, we use the Numenta Anomaly Benchmark ~\cite{Ahmad2017Unsupervised} dataset,
@@ -535,9 +916,113 @@ An example of the injected outliers is presented in Figure \ref{fig:FI2010_examp
 
 \section{Accuracy}
 
-TODO: describe the main metrics (accuracy, balanced accuracy, F1, Cohen's Kappa, Confusion matrix)
+% TODO: maybe add citations? or is it a common knowledge
+
+In this section, we will describe the main metrics used to evaluate the performance of the anomaly detection models.
+The Transformer encoder model will be compared with the simple linear regression model on handcrafted features
+and with the Linear Transformer model \cite{2006.16236}.
+The inference procedure will be described and the results will be presented.
+
+\subsection{Inference}
+After training the model on the training set as described in Section \ref{sec:training}, we can use the model to make predictions on the test set.
+
+\subsection{Metrics} \label{sec:metrics}
+
+In this section the metrics used to evaluate the performance of the anomaly detection models will be described.
+
+Before we describe the metrics, we need to introduce the confusion matrix and
+the following notation:
+\begin{itemize}
+    \item \textbf{TP} - True Positive calculated as the number of correctly predicted anomalies
+    \item \textbf{TN} - True Negative calculated as the number of correctly predicted non-anomalies
+    \item \textbf{FP} - False Positive which is the number of incorrectly predicted anomalies
+    \item \textbf{FN} - False Negative which is the number of incorrectly predicted non-anomalies
+    \item \textbf{P} - Number of positive samples, i.e., $\textbf{P}=\textbf{TP}+\textbf{FN}$
+    \item \textbf{N} - Number of negative samples, i.e., $\textbf{N}=\textbf{TN}+\textbf{FP}$
+\end{itemize}
+
+The confusion matrix is a table with two rows and two columns that reports the number of false positives, false negatives, true positives, and true negatives.
+
+% https://tex.stackexchange.com/a/20274
+\begin{tikzpicture}[
+        box/.style={draw,rectangle,minimum size=2cm,text width=1.5cm,align=left}]
+    \matrix (conmat) [row sep=.1cm,column sep=.1cm] {
+        \node (tpos) [box,
+            label=left:\( \mathbf{P'} \),
+            label=above:\( \mathbf{P} \),
+        ] {True \\ positive \textbf{TP}};
+         &
+        \node (fneg) [box,
+            label=above:\textbf{n},
+            label=above right:\textbf{total},
+            label=right:\( \mathrm{P}' \)
+        ]{False \\ negative \textbf{FN}};
+        \\
+        \node (fpos) [box,
+            label=left:\( \mathbf{N'} \),
+            label=below left:\textbf{total},
+            label=below:P
+        ] {False \\ positive \textbf{FP}};
+         &
+        \node (tneg) [box,
+            label=right:\( \mathrm{N}' \),
+            label=below:N
+        ] {True \\ negative \textbf{TN}};
+        \\
+    };
+    \node [left=.05cm of conmat,text width=1.5cm,align=right] {\textbf{actual \\ value}};
+    \node [above=.05cm of conmat] {\textbf{prediction outcome}};
+\end{tikzpicture}
+
+The matrix summarizes the predictions from a classification model, i.e.,
+how well the model performed when predicting the class labels for positive
+and negative samples.
+While the matrix presents the most informative view of the performance of the model,
+we still need to summarize the information in the matrix into a single number(s)
+that can be used to compare different models.
+
+In this paper, we will use the following metrics to compare the performance of the anomaly detection models:
+
+\begin{itemize}
+    \item \textbf{Accuracy} is the fraction of predictions that the model got right.
+          It is defined as follows:
+          $$\text{Accuracy}=\frac{\textbf{TP}+\textbf{TN}}{\textbf{TP}+\textbf{TN}+\textbf{FP}+\textbf{FN}}$$
+          While this metric is easy to understand, it is not very informative when the dataset is imbalanced
+          which is the case for the anomaly detection task where the proportion
+          of positive samples is low.
+
+    \item \textbf{Precision} is the fraction of positive predictions that were correct.
+          $$\text{Precision}=\frac{\textbf{TP}}{\textbf{TP}+\textbf{FP}}$$
+          This metric is useful when the cost of false positives is high.
+          For example, in the case of anomaly detection, we want to have
+          a high precision so that we do not have to manually check many false positives
+          or trigger any downstream filtering task too often.
+
+    \item \textbf{Recall} is the fraction of positive samples that were correctly predicted.
+          $$\text{Recall}=\frac{\textbf{TP}}{\textbf{TP}+\textbf{FN}}$$
+          This metric is useful when the cost of false negatives is high.
+          For example, in the case of anomaly detection, we want to minimize the number of false negatives
+          because we do not want to miss any anomalies.
+
+    \item \textbf{F1} is the harmonic mean of precision and recall which ranges from 0 to 1.
+          $$\text{F1}=2\cdot\frac{\text{Precision}\cdot\text{Recall}}{\text{Precision}+\text{Recall}}$$
+          This metric is useful when we want to balance the precision and recall.
+          For example, in the case of anomaly detection, we want to have a high precision
+          so that we do not have to manually check many false positives
+          or trigger any downstream filtering task too often.
+          At the same time, we want to minimize the number of false negatives
+          because we do not want to miss any anomalies.
+
+          The advantage of using this metric instead of the accuracy is that it
+          can be used even when the dataset is highly imbalanced and it would
+          detect if the model performs poorly in terms of precision and/or recall.
+\end{itemize}
+
+
+\subsection{Comparison}
 
 % for metrics example: https://www.mdpi.com/1999-4893/15/10/385`'
+% or this: https://thesis.unipd.it/retrieve/840738c1-c175-4529-b5e5-795b393a36a2/Baron_Alex.pdf
 
 \section{Performance/Speed}
 

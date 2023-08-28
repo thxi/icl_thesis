@@ -1,20 +1,19 @@
 import logging
 import math
 
-import lightning.pytorch as pl
-import numpy as np
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
 
-from .utils import get_metrics
-
+from .utils import MetricsMixin
 
 # configure logger
 logger = logging.getLogger(__name__)
+logger.setLevel(logging.INFO)
 
 
-# implemented as in https://uvadlc-notebooks.readthedocs.io/en/latest/tutorial_notebooks/tutorial6/Transformers_and_MHAttention.html
+# implemented as in
+# https://uvadlc-notebooks.readthedocs.io/en/latest/tutorial_notebooks/tutorial6/Transformers_and_MHAttention.html
 
 
 def scaled_dot_product(q, k, v, mask=None):
@@ -226,7 +225,7 @@ class PositionalEncoding(nn.Module):
         return x
 
 
-class TransformerAnomalyDetector(pl.LightningModule):
+class TransformerAnomalyDetector(MetricsMixin):
     def __init__(
         self,
         input_dim,
@@ -243,8 +242,6 @@ class TransformerAnomalyDetector(pl.LightningModule):
         self._create_model()
 
         self.loss_fn = loss_fn
-        self.training_step_outputs = []
-        self.validation_step_outputs = []
 
     def _create_model(self):
         # TODO:
@@ -292,73 +289,12 @@ class TransformerAnomalyDetector(pl.LightningModule):
         x = x[:, 0, 0]
         return x
 
-    def training_step(self, batch, batch_idx):
-        # self.train()
-        x_batch, y_batch = batch
-        y_pred = self(x_batch)
-        loss = self.loss_fn(y_pred, y_batch)
-        self.training_step_outputs.append((loss, x_batch, y_batch))
-        # self.log("train_loss", loss)
-        return loss
-
-    def validation_step(self, batch, batch_idx):
-        # self.eval()
-        x_batch, y_batch = batch
-        y_pred = self(x_batch)
-        loss = self.loss_fn(y_pred, y_batch)
-        self.validation_step_outputs.append((loss, x_batch, y_batch))
-        # self.log("val_loss", loss)
-        return loss
-
-    def on_train_epoch_end(self):
-        step_outputs = self.training_step_outputs
-        self._epoch_end(step_outputs, mode="train")
-
-    def on_validation_epoch_end(self):
-        step_outputs = self.validation_step_outputs
-        self._epoch_end(step_outputs, mode="val")
-
-    def _epoch_end(self, step_outputs, mode):
-        res_dict = {}
-        # self.eval()
-        test_loss = 0
-        num_batches = 0
-
-        all_y = []
-        all_y_pred = []
-        with torch.no_grad():
-            for loss, x_batch, y_batch in step_outputs:
-                y_pred = self(x_batch)
-                all_y.append(y_batch)
-
-                test_loss += loss.item()
-
-                # convert sigmoid to labels
-                y_pred = y_pred.reshape(-1)
-                y_pred = (y_pred > 0.5).int()
-                all_y_pred.append(y_pred)
-                num_batches += 1
-
-        test_loss /= num_batches
-        res_dict["loss"] = test_loss
-        all_y = torch.cat(all_y)
-        all_y_pred = torch.cat(all_y_pred)
-        res_dict = res_dict | get_metrics(y_true=all_y.cpu().numpy(), y_pred=all_y_pred.cpu().numpy())
-
-        for k, v in res_dict.items():
-            self.log(f"{mode}_{k}", np.float32(v))
-
-        if mode == "val":
-            self.validation_step_outputs.clear()
-        else:
-            self.training_step_outputs.clear()
-
     def configure_optimizers(self):
         optimizer = torch.optim.Adam(self.parameters(), lr=self.hparams.learning_rate)
         return optimizer
 
 
-class LinearRegressionAnomalyDetector(pl.LightningModule):
+class LinearRegressionAnomalyDetector(MetricsMixin):
     def __init__(
         self,
         input_dim,
@@ -370,8 +306,6 @@ class LinearRegressionAnomalyDetector(pl.LightningModule):
         self._create_model()
 
         self.loss_fn = loss_fn
-        self.training_step_outputs = []
-        self.validation_step_outputs = []
 
     def _create_model(self):
         self.linear = nn.Linear(self.hparams.input_dim, 1)
@@ -387,67 +321,6 @@ class LinearRegressionAnomalyDetector(pl.LightningModule):
         # since we want to predict the probability of each class
         x = x[:, 0]
         return x
-
-    def training_step(self, batch, batch_idx):
-        # self.train()
-        x_batch, y_batch = batch
-        y_pred = self(x_batch)
-        loss = self.loss_fn(y_pred, y_batch)
-        self.training_step_outputs.append((loss, x_batch, y_batch))
-        # self.log("train_loss", loss)
-        return loss
-
-    def validation_step(self, batch, batch_idx):
-        # self.eval()
-        x_batch, y_batch = batch
-        y_pred = self(x_batch)
-        loss = self.loss_fn(y_pred, y_batch)
-        self.validation_step_outputs.append((loss, x_batch, y_batch))
-        # self.log("val_loss", loss)
-        return loss
-
-    def on_train_epoch_end(self):
-        step_outputs = self.training_step_outputs
-        self._epoch_end(step_outputs, mode="train")
-
-    def on_validation_epoch_end(self):
-        step_outputs = self.validation_step_outputs
-        self._epoch_end(step_outputs, mode="val")
-
-    def _epoch_end(self, step_outputs, mode):
-        res_dict = {}
-        # self.eval()
-        test_loss = 0
-        num_batches = 0
-
-        all_y = []
-        all_y_pred = []
-        with torch.no_grad():
-            for loss, x_batch, y_batch in step_outputs:
-                y_pred = self(x_batch)
-                all_y.append(y_batch)
-
-                test_loss += loss.item()
-
-                # convert sigmoid to labels
-                y_pred = y_pred.reshape(-1)
-                y_pred = (y_pred > 0.5).int()
-                all_y_pred.append(y_pred)
-                num_batches += 1
-
-        test_loss /= num_batches
-        res_dict["loss"] = test_loss
-        all_y = torch.cat(all_y)
-        all_y_pred = torch.cat(all_y_pred)
-        res_dict = res_dict | get_metrics(y_true=all_y.cpu().numpy(), y_pred=all_y_pred.cpu().numpy())
-
-        for k, v in res_dict.items():
-            self.log(f"{mode}_{k}", np.float32(v))
-
-        if mode == "val":
-            self.validation_step_outputs.clear()
-        else:
-            self.training_step_outputs.clear()
 
     def configure_optimizers(self):
         optimizer = torch.optim.Adam(self.parameters(), lr=self.hparams.learning_rate)
@@ -604,7 +477,7 @@ class LinearTransformerEncoder(nn.Module):
 
 
 # see https://github.com/idiap/fast-transformers
-class LinearTransformerAnomalyDetector(pl.LightningModule):
+class LinearTransformerAnomalyDetector(MetricsMixin):
     def __init__(
         self,
         input_dim,
@@ -621,24 +494,10 @@ class LinearTransformerAnomalyDetector(pl.LightningModule):
         self._create_model()
 
         self.loss_fn = loss_fn
-        self.training_step_outputs = []
-        self.validation_step_outputs = []
 
     def _create_model(self):
         self.front_linear = nn.Linear(self.hparams.input_dim, self.hparams.block_input_dim)
 
-        # builder = TransformerEncoderBuilder.from_kwargs(
-        #     attention_type="linear",
-        #     n_layers=self.hparams.block_args["num_layers"],
-        #     n_heads=self.hparams.block_args["num_heads"],
-        #     query_dimensions=self.hparams.block_args["input_dim"],
-        #     value_dimensions=self.hparams.block_args["input_dim"],
-        #     feed_forward_dimensions=self.hparams.block_args["dim_feedforward"],
-        #     final_normalization=self.hparams.block_args["enable_layer_norm"],
-        #     dropout=self.hparams.dropout,
-        # )
-        # self.transformer_encoder = builder.get()
-        # print(self.transformer_encoder )
         self.transformer_encoder = LinearTransformerEncoder(
             **self.hparams.block_args,
         )
@@ -675,67 +534,6 @@ class LinearTransformerAnomalyDetector(pl.LightningModule):
 
         x = x[:, 0, 0]
         return x
-
-    def training_step(self, batch, batch_idx):
-        # self.train()
-        x_batch, y_batch = batch
-        y_pred = self(x_batch)
-        loss = self.loss_fn(y_pred, y_batch)
-        self.training_step_outputs.append((loss, x_batch, y_batch))
-        # self.log("train_loss", loss)
-        return loss
-
-    def validation_step(self, batch, batch_idx):
-        # self.eval()
-        x_batch, y_batch = batch
-        y_pred = self(x_batch)
-        loss = self.loss_fn(y_pred, y_batch)
-        self.validation_step_outputs.append((loss, x_batch, y_batch))
-        # self.log("val_loss", loss)
-        return loss
-
-    def on_train_epoch_end(self):
-        step_outputs = self.training_step_outputs
-        self._epoch_end(step_outputs, mode="train")
-
-    def on_validation_epoch_end(self):
-        step_outputs = self.validation_step_outputs
-        self._epoch_end(step_outputs, mode="val")
-
-    def _epoch_end(self, step_outputs, mode):
-        res_dict = {}
-        # self.eval()
-        test_loss = 0
-        num_batches = 0
-
-        all_y = []
-        all_y_pred = []
-        with torch.no_grad():
-            for loss, x_batch, y_batch in step_outputs:
-                y_pred = self(x_batch)
-                all_y.append(y_batch)
-
-                test_loss += loss.item()
-
-                # convert sigmoid to labels
-                y_pred = y_pred.reshape(-1)
-                y_pred = (y_pred > 0.5).int()
-                all_y_pred.append(y_pred)
-                num_batches += 1
-
-        test_loss /= num_batches
-        res_dict["loss"] = test_loss
-        all_y = torch.cat(all_y)
-        all_y_pred = torch.cat(all_y_pred)
-        res_dict = res_dict | get_metrics(y_true=all_y.cpu().numpy(), y_pred=all_y_pred.cpu().numpy())
-
-        for k, v in res_dict.items():
-            self.log(f"{mode}_{k}", np.float32(v))
-
-        if mode == "val":
-            self.validation_step_outputs.clear()
-        else:
-            self.training_step_outputs.clear()
 
     def configure_optimizers(self):
         optimizer = torch.optim.Adam(self.parameters(), lr=self.hparams.learning_rate)
