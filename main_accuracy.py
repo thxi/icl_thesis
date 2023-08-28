@@ -172,7 +172,6 @@ def main(model_name, dataset_name):
     # for plots
     mt = trainer.callbacks[1]
     res = get_metrics_from_tracker(mt)
-
     plot_metrics_from_tracker(res, dataset_name=dataset_name, filename=f"plots/{model_name}_{dataset_name}.png")
 
 
