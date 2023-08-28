@@ -83,8 +83,6 @@ def get_model(model_name, input_dim, window_size=8, override_params_dict=None):
     elif model_name == "LinearRegression":
         input_dim = input_dim * window_size
 
-        loss_fn = nn.BCEWithLogitsLoss(pos_weight=torch.tensor(5))
-
         model_params = {
             "input_dim": input_dim,
             "learning_rate": 1e-5,
@@ -99,7 +97,7 @@ def get_model(model_name, input_dim, window_size=8, override_params_dict=None):
         ret_dict["gradient_clip_val"] = None
     elif model_name == "LinearTransformer":
         block_args = {
-            "input_dim": input_dim,
+            "input_dim": 8,
             "dim_feedforward": 2 * 8,
             "num_layers": 1,
             "enable_layer_norm": False,
@@ -108,8 +106,6 @@ def get_model(model_name, input_dim, window_size=8, override_params_dict=None):
             "enable": False,
             "max_len": window_size,
         }
-
-        loss_fn = nn.BCEWithLogitsLoss(pos_weight=torch.tensor(5))
 
         model_params = {
             "input_dim": input_dim,
@@ -157,7 +153,9 @@ def main(model_name, dataset_name):
     epochs = model_dict["epochs"]
     gradient_clip_val = model_dict["gradient_clip_val"]
     max_lr = model_dict["max_lr"]
-    logger.info(f"Training model: {model_name} on dataset: {dataset_name} for {epochs} epochs")
+    logger.info(
+        f"Training model: {model_name} on dataset: {dataset_name} for {epochs} epochs. Input dim: {len(tr_cols)}"
+    )
 
     trainer = pl.Trainer(
         accelerator="cpu",
