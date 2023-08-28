@@ -162,9 +162,6 @@ In this chapter, we will describe the main concepts and ideas used in this work.
 The reader will be introduced to the main concepts of the Transformer architecture and how it can be used for anomaly detection in time series.
 Finally, the main concepts of programming an FPGA will be introduced and the specific optimizations that can be applied to speed up the computations.
 
-% TODO: use neurips paper as an example:
-% https://proceedings.neurips.cc/paper_files/paper/2019/file/6775a0635c302542da2c32aa19d86be0-Paper.pdf
-
 \section{Problem Formulation}
 
 
@@ -200,9 +197,6 @@ In this section, we will describe the main concepts of the Transformer architect
 We will describe the main building blocks of the Transformer architecture
 and will give a special treatment to the attention mechanism firstly introduced in \cite{1409.0473}.
 
-% TODO:
-% https://ai.stackexchange.com/questions/23221/how-is-bert-different-from-the-original-transformer-architecture
-% Both the encoder-decoder architecture and the attention mechanism are not novel proposals. In fact, previous neural network architectures to solve many NLP tasks, such as machine translation, had already used these mechanisms (for example, take a look at this paper). The novelty of the transformer and this cited paper is that it shows that we can simply use attention to solve tasks that involve sequences (such as machine translation) and we do not need recurrent connections, which is an advantage, given that recurrent connections can hinder the parallelization of the training process.
 
 \subsubsection{General architecture}
 
@@ -221,7 +215,6 @@ of recurrent and convolutional layers.
 Figure \ref{fig:attention_is_all_you_need} presents the main architecture of the transformer.
 The architecture consists of an \textbf{encoder} and a \textbf{decoder}.
 For the purpose of the thesis we will only consider the \textbf{encoder} part of the architecture.
-% TODO: maybe describe the decoder also?
 The \textbf{encoder} is preceded by a \textbf{positional encoding} layer which is used to \emph{inject} the positional information
 to the input vectors $x_i$ because the attention mechanism is permutation invariant, this will be explained in Section \ref{sec:attention_mechanism}.
 
@@ -390,7 +383,10 @@ In this section, the main design principles of programming an FPGA board will be
 % https://pytorch.org/tutorials/intermediate/scaled_dot_product_attention_tutorial.html?utm_source=whats_new_tutorials&utm_medium=scaled_dot_product_attention_tutorial
 
 % TODO: maybe rewrite
-The progress of hardware acceleration devices like field-programmable gate arrays (FPGAs) enables the achievement of high component density and low power consumption, all the while minimizing latency \cite{10.1007/978-3-319-56258-2_14}. They are commonly used to accelerate high-performance, computationally intensive systems (for example, data centers) or to minimize the latency of execution (for example, in high-frequency trading).
+The progress of hardware acceleration devices like field-programmable gate arrays (FPGAs) enables the achievement of high component density and low power consumption,
+all the while minimizing latency \cite{10.1007/978-3-319-56258-2_14}.
+They are commonly used to accelerate high-performance, computationally intensive systems
+(for example, data centers) or to minimize the latency of execution (for example, in high-frequency trading).
 
 \subsection{FPGA development} \label{sec:fpga_development}
 
@@ -407,6 +403,9 @@ when a term is not clear and the reader can refer to this section when necessary
 \end{definition}
 \begin{definition}
     \textbf{BRAM (Block RAM)} is a dedicated two-port memory that can be used to store data.
+\end{definition}
+\begin{definition}
+    \textbf{DSP (Digital Signal Processing)} is a specialized hardware unit that is optimized for performing mathematical operations on streaming data.
 \end{definition}
 \begin{definition}
     \textbf{Clock cycle} is the time between two consecutive rising edges of the clock signal.
@@ -490,7 +489,7 @@ functionality of your design before actually programming it onto the FPGA hardwa
 \end{definition}
 
 
-\subsection{Common optimizations}
+\subsection{Common optimizations} \label{sec:common_optimizations}
 
 In this section, common optimization techniques and how they are achieved will be introduced.
 
@@ -618,39 +617,289 @@ void toplevel(int* a, int* b) {
     so that there are 2 of them.
 \end{remark}
 
-% TODO: Loop Pipelining and unrolling
-% TODO: nested loops behaviour (see loop pipelining section)
+\subsubsection{Loop Reordering}
+
+Loop reordering optimization is an optimization used to improve the performance
+by changing the order in which loops are executed.
+This optimization is not strictly related to FPGA development and
+it involves altering the nesting order of loops in a way that improves data locality and
+cache utilization (for example, on modern CPU), enables usage of SIMD resources.
+
+% TODO: maybe add a simple row major order and column major order array example
+
+In the context of FPGA, loop reordering can be used achieve better \texttt{II}
+when we are dealing with pipelining and nested loops (see Section \ref{sec:loop_pipelining} and Section \ref{sec:mm_loop_reordering} for an example).
+
 
 \subsubsection{Function Inlining}
 
-% not specific to FPGA, but can be useful
-% https://wiki.york.ac.uk/display/RTS/Practical+4+-+Vitis+HLS
+Function inlining optimization technique is not specific to FPGA development only.
+The technique is used to improve the performance of a program by reducing the overhead associated with function calls.
+Calling a function incurs some overhead in terms of memory and execution time due to the need to set up the function call stack, pass arguments, and jump to the function's code.
+Function inlining aims to eliminate this overhead by replacing a function call with the actual body of the function at the call site.
+In other words, the compiler takes the contents of the called function and inserts it directly into the location where the function is called.
+This, however, increases the size of the code and, specifically in the case of FPGAs, the resource utilization (LUTs and FF).
+
+\subsubsection{Array Partitioning and Reshaping}
+
+Partitioning arrays in an FPGA (Field-Programmable Gate Array) refers to the
+process of dividing a large memory block (e.g., one array) into smaller sections, often referred to
+as memory banks or partitions.
+
+Partitioning allows accessing different parts of the array in parallel
+so that bottlenecks caused by a single memory interface being overwhelmed with requests
+can be avoided.
+
+There are 3 different types of partitioning that can be applied to an array (Refer to Figure \ref{fig:array_partitioning}):
+
+\begin{enumerate}
+    \item \textbf{Cyclic}.
+          In a cyclic partition, the array is divided blocks of interleaved elements of the original array.
+    \item \textbf{Block}.
+          In a block partition, the array is divided into non-overlapping blocks of sequential elements in the original array.
+          Each block is assigned to a separate memory bank.
+    \item \textbf{Complete}.
+          The array is split intio intividual elements
+\end{enumerate}
 
 
-% good example of array partition:
-% https://github.com/twaclaw/matmult/tree/master
 
-% good guide:
-% https://wiki.york.ac.uk/display/RTS/Vitis+HLS+Knowledge+Base
-
-\subsubsection{Arrays}
-% https://docs.xilinx.com/r/en-US/ug1399-vitis-hls/Arrays-Primer
-% https://docs.xilinx.com/r/en-US/ug1399-vitis-hls/Array-Accesses-and-Performance
-
-TODO: Partitioning (block, cyclic, complete)
-
-\subsubsection{Streams}
-
-TODO:
-
-% https://docs.xilinx.com/r/en-US/ug1399-vitis-hls/Arrays-on-the-Interface
-
-% https://docs.xilinx.com/r/en-US/ug1399-vitis-hls/Memory-Mapped-Interface
-
-% https://docs.xilinx.com/r/en-US/ug1399-vitis-hls/Optimizing-AXI-System-Performance
+\begin{figure}[h!]
+    \centering
+    \includegraphics[scale=0.5]{array_partition_illust.png}
+    \caption{Array partitioning illustration.}
+    \label{fig:array_partitioning}
+\end{figure}
 
 
-\subsubsection{Example of optimized matrix multiplication}
+The disadvantage of partitioning is that it increases the number of memory interfaces
+which leads to the increased resource utilization (i.e., more FFs, LUTs are used because each memory block requires separate control logic).
+
+This can be partly mitigated by using the \textbf{array reshaping}.
+The difference between partitioning and reshaping is that partitioning
+creates multiple memory interfaces while reshaping still uses a single memory interface
+(i.e., all partitions are merged to a single physical memory).
+
+\subsection{Example of optimizing matrix multiplication}
+
+In this section, we will describe the process of optimizing a matrix multiplication
+using the techniques described in Section \ref{sec:common_optimizations}.
+This section can be treated as a tutorial on how to optimize a simple matrix multiplication.
+
+Full source code for with all the files can be located in \texttt{vitis\_hls/matmul\_naive}.
+
+\subsubsection{Naive implementation}
+
+The naive implementation of matrix multiplication is simply a triple for loop
+which directly implements the definition of $C = A \cdot B$ where A, B and C are the matrices
+and $C_{i,j}$ are defined as in Equation \ref{eq:matmul}.
+
+\begin{equation} \label{eq:matmul}
+    C_{i,j} = \sum_{k=0}^{N} A_{i,k} \cdot B_{k,j}
+\end{equation}
+
+
+\begin{lstlisting}[language=c++,numbers=none]
+#include "matrixmul.h"
+
+void matmul(mat_a_t a[MAT_A_ROWS][MAT_A_COLS],
+            mat_b_t b[MAT_B_ROWS][MAT_B_COLS],
+            result_t res[MAT_A_ROWS][MAT_B_COLS]) {
+loop_i:
+  for (int i = 0; i < MAT_A_ROWS; i++) {
+  loop_j:
+    for (int j = 0; j < MAT_B_COLS; j++) {
+      res[i][j] = 0;
+    loop_k:
+      for (int k = 0; k < MAT_B_ROWS; k++) {
+#pragma HLS PIPELINE off
+        res[i][j] += a[i][k] * b[k][j];
+      }
+    }
+  }
+}
+\end{lstlisting}
+
+
+The Vitis HLS Synthesis Report for the naive implementation is presented in Figure \ref{fig:matmul_naive_synth}.
+The data types for matrices used are int32\_t. Matrix A is of size 3x4 and matrix B has size 4x3.
+For this baseline implementation, we are reaching a latency of 205 clock cycles, using 0 BRAMs, 327 FF and 282 LUTs.
+
+
+\begin{figure}[h!]
+    \centering
+    \includegraphics[width=\textwidth]{matmul_naive_synth.png}
+    \caption{Naive matrix multiplication synthesis report}
+    \label{fig:matmul_naive_synth}
+\end{figure}
+
+
+\subsubsection{Loop pipelining and unrolling}
+
+The baseline code can be optimized by pipelining.
+There are three loops that can be pipelined (\texttt{loop\_i}, \texttt{loop\_j} and \texttt{loop\_k}).
+
+\textbf{Case 1: Pipelining \texttt{loop\_k}.} A simple pipelining of the innermost loop
+leads to the pipelining of Multiply and Accumulate operation (MAC) which is the main operation in the loop.
+There is no need to partition arrays a and b as memory in arrays a and b only need
+to supply 1 element per cycle.
+
+The pipelining leads to decrease in latency to 42 clock cycles at the cost of using
+526 FF and 501 LUT which is almost twice as many resources as in the naive implementation.
+
+\begin{figure}[h!]
+    \centering
+    \includegraphics[width=\textwidth]{matmul_pipek_synth.png}
+    \caption{Matrix multiplication with pipelined loop \texttt{loop\_k}}
+    \label{fig:matmul_pipek_synth}
+\end{figure}
+
+\textbf{Case 2: Pipelining \texttt{loop\_j}.}
+The pipelining of the middle loop requires partitioning of arrays a by \texttt{MAT\_A\_COLS} and b by \texttt{MAT\_B\_ROWS}.
+There are \texttt{MAT\_A\_COLS} (or \texttt{MAT\_B\_ROWS}) MAC operations per cycle so that
+memory of a and b needs to be sufficiently divided to supply \texttt{MAT\_B\_ROWS} elements per cycle.
+Array a is partitioned along the second dimension and array b is partitioned along the first dimension
+because of the access patterns.
+In this example, we use the \texttt{complete} partitioning which divides the memory into
+individual registers.
+
+
+\begin{lstlisting}[language=c++,numbers=none]
+#include "matrixmul.h"
+
+void matmul(mat_a_t a[MAT_A_ROWS][MAT_A_COLS],
+            mat_b_t b[MAT_B_ROWS][MAT_B_COLS],
+            result_t res[MAT_A_ROWS][MAT_B_COLS]) {
+#pragma HLS ARRAY_PARTITION variable = a complete dim = 2
+#pragma HLS ARRAY_PARTITION variable = b complete dim = 1
+loop_i:
+  for (int i = 0; i < MAT_A_ROWS; i++) {
+#pragma HLS PIPELINE off
+  loop_j:
+    for (int j = 0; j < MAT_B_COLS; j++) {
+      int tmp = 0;
+#pragma HLS PIPELINE
+    loop_k:
+      for (int k = 0; k < MAT_B_ROWS; k++) {
+#pragma HLS UNROLL
+        tmp += a[i][k] * b[k][j];
+      }
+      res[i][j] = tmp;
+    }
+  }
+}
+\end{lstlisting}
+
+With this addition, the latency is down to 15 clock cycles and the resource usage
+has increased to 1221 FF and 511 LUTs (Figure \ref{fig:matmul_pipej_synth}).
+
+\begin{figure}[h!]
+    \centering
+    \includegraphics[width=\textwidth]{matmul_pipej_synth.png}
+    \caption{Matrix multiplication with pipelined loop \texttt{loop\_j}}
+    \label{fig:matmul_pipej_synth}
+\end{figure}
+
+\textbf{Case 3: Pipelining \texttt{loop\_i}.} Pipelining the outermost loop requires
+additional partitioning of array res by \texttt{MAT\_B\_COLS} and full partitioning
+of array b as \texttt{loop\_k} and \texttt{loop\_j} are getting unrolled.
+
+\begin{lstlisting}[language=c++,numbers=none]
+#include "matrixmul.h"
+
+void matmul(mat_a_t a[MAT_A_ROWS][MAT_A_COLS],
+            mat_b_t b[MAT_B_ROWS][MAT_B_COLS],
+            result_t res[MAT_A_ROWS][MAT_B_COLS]) {
+#pragma HLS ARRAY_PARTITION variable = a complete dim = 2
+#pragma HLS ARRAY_PARTITION variable = b complete dim = 0
+#pragma HLS ARRAY_PARTITION variable = res complete dim = 2
+loop_i:
+  for (int i = 0; i < MAT_A_ROWS; i++) {
+#pragma HLS PIPELINE
+  loop_j:
+    for (int j = 0; j < MAT_B_COLS; j++) {
+#pragma HLS UNROLL
+      int tmp = 0;
+    loop_k:
+      for (int k = 0; k < MAT_B_ROWS; k++) {
+#pragma HLS UNROLL
+        tmp += a[i][k] * b[k][j];
+      }
+      res[i][j] = tmp;
+    }
+  }
+}
+\end{lstlisting}
+
+The latency is down to 9 clock cycles and the resource usage is up to 3819 FF and 1383 LUTs
+(Figure \ref{fig:matmul_pipei_synth}).
+
+\begin{figure}[h!]
+    \centering
+    \includegraphics[width=\textwidth]{matmul_pipei_synth.png}
+    \caption{Matrix multiplication with pipelined loop \texttt{loop\_i}}
+    \label{fig:matmul_pipei_synth}
+\end{figure}
+
+\subsubsection{Loop reordering} \label{sec:mm_loop_reordering}
+
+
+We can also compare how the loop reordering affects the performance of the matrix multiplication
+and specifically how it compares to the pipelining of the \texttt{loop\_j} in terms of latency and resource usage.
+
+The loop reordering technique allows us to avoid partitioning matrix a compared to the \texttt{loop\_j} pipelining solution. However,
+we now have to partition the output matrix by \texttt{MAT\_B\_COLS}.
+
+\begin{lstlisting}[language=c++,numbers=none]
+#include "matrixmul.h"
+
+void matmul(mat_a_t a[MAT_A_ROWS][MAT_A_COLS],
+            mat_b_t b[MAT_B_ROWS][MAT_B_COLS],
+            result_t res[MAT_A_ROWS][MAT_B_COLS]) {
+  int temp_sum[MAT_B_COLS];
+#pragma HLS ARRAY_PARTITION variable = b dim = 2 complete
+#pragma HLS ARRAY_PARTITION variable = res dim = 2 complete
+#pragma HLS ARRAY_PARTITION variable = temp_sum dim = 1 complete
+loop_i:
+  for (int i = 0; i < MAT_A_ROWS; i++) {
+  loop_k:
+    for (int k = 0; k < MAT_B_ROWS; k++) {
+#pragma HLS PIPELINE
+    loop_j:
+      for (int j = 0; j < MAT_B_COLS; j++) {
+#pragma HLS UNROLL
+        int result = (k == 0) ? 0 : temp_sum[j];
+        result += a[i][k] * b[k][j];
+        temp_sum[j] = result;
+        if (k == MAT_B_ROWS - 1) {
+          res[i][j] = result;
+        }
+      }
+    }
+  }
+}
+\end{lstlisting}
+
+From Figure \ref{fig:matmul_loop_reordering}, the latency is 17 clock cycles
+and the resource usage is 1031 FF and 611 LUTs.
+The performance is worse than the pipelined loop \texttt{loop\_j} but the resource usage is lower for FF and higher for LUTs.
+
+\begin{figure}[h!]
+    \centering
+    \includegraphics[width=\textwidth]{matmul_loop_reordering.png}
+    \caption{Matrix multiplication with loop reordering}
+    \label{fig:matmul_loop_reordering}
+\end{figure}
+
+\textbf{Summary}
+The pipelining of the outermost loop leads to the best performance with the lowest latency.
+However, this comes at the big cost of using the most resources as array b
+needs to be fully partitioned.
+In this work, we will use the pipelined loop \texttt{loop\_j}
+as it provides a good trade-off between latency and resource usage.
+
+
+% \texttt{II} Source code can be located in \texttt{vitis_hls}.
 
 
 % this is quite a cool video that goes into the details
