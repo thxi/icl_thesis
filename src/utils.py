@@ -9,10 +9,10 @@ import numpy as np
 import pandas as pd
 import torch
 from lightning.pytorch import seed_everything
-from sklearn.metrics import f1_score, precision_score, recall_score, roc_auc_score
+from sklearn.metrics import (f1_score, precision_score, recall_score,
+                             roc_auc_score)
 from sklearn.preprocessing import MinMaxScaler
 from torch.utils.data import DataLoader, TensorDataset
-
 
 logger = logging.getLogger(__name__)
 
