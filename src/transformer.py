@@ -73,7 +73,13 @@ class MultiheadAttention(nn.Module):
         # In most transformers, the first thing that happens after each self attention
         # is a feed-forward layer, so this may not be strictly necessary.
         # I've never seen a proper ablation to test whether Wo can be removed.
-        self.qkv_proj = nn.Linear(input_dim, 3 * embed_dim, bias=False)
+
+        # using separate matrices instead
+        # self.qkv_proj = nn.Linear(input_dim, 3 * embed_dim, bias=False)
+        self.query_mat = nn.Linear(input_dim, embed_dim, bias=False)
+        self.key_mat = nn.Linear(input_dim, embed_dim, bias=False)
+        self.value_mat = nn.Linear(input_dim, embed_dim, bias=False)
+
         # matrix to apply after the multi-head self-attention
         self.o_proj = nn.Linear(embed_dim, embed_dim)
 
@@ -81,7 +87,10 @@ class MultiheadAttention(nn.Module):
 
     def _reset_parameters(self):
         # Original Transformer initialization, see PyTorch documentation
-        nn.init.xavier_uniform_(self.qkv_proj.weight)
+        # nn.init.xavier_uniform_(self.qkv_proj.weight)
+        nn.init.xavier_uniform_(self.query_mat.weight)
+        nn.init.xavier_uniform_(self.key_mat.weight)
+        nn.init.xavier_uniform_(self.value_mat.weight)
         # self.qkv_proj.bias.data.fill_(0)
         nn.init.xavier_uniform_(self.o_proj.weight)
         self.o_proj.bias.data.fill_(0)
@@ -90,12 +99,22 @@ class MultiheadAttention(nn.Module):
         batch_size, seq_length, _ = x.size()  # [Batch, SeqLen, Dims]
         if mask is not None:
             mask = expand_mask(mask)
-        qkv = self.qkv_proj(x)  # [Batch, SeqLen, 3 * Dims]
+        # qkv = self.qkv_proj(x)  # [Batch, SeqLen, 3 * Dims]
 
-        # Separate Q, K, V from linear output
-        qkv = qkv.reshape(batch_size, seq_length, self.num_heads, 3 * self.head_dim)
-        qkv = qkv.permute(0, 2, 1, 3)  # [Batch, Head, SeqLen, Dims]
-        q, k, v = qkv.chunk(3, dim=-1)  # 3*[Batch, Head, SeqLen, Dims]
+        # # Separate Q, K, V from linear output
+        # qkv = qkv.reshape(batch_size, seq_length, self.num_heads, 3 * self.head_dim)
+
+        # qkv = qkv.permute(0, 2, 1, 3)  # [Batch, Head, SeqLen, Dims]
+        # q, k, v = qkv.chunk(3, dim=-1)  # 3*[Batch, Head, SeqLen, Dims]
+
+        q = self.query_mat(x)  # [Batch, SeqLen, Dims]
+        k = self.key_mat(x)  # [Batch, SeqLen, Dims]
+        v = self.value_mat(x)  # [Batch, SeqLen, Dims]
+
+        # Split into multiple heads
+        q = q.reshape(batch_size, seq_length, self.num_heads, self.head_dim)
+        k = k.reshape(batch_size, seq_length, self.num_heads, self.head_dim)
+        v = v.reshape(batch_size, seq_length, self.num_heads, self.head_dim)
 
         # Determine value outputs
         values, attention = scaled_dot_product(q, k, v, mask=mask)
@@ -356,14 +375,22 @@ class LinearAttention(nn.Module):
         self.embed_dim = embed_dim
         # a small number to ensure the numerical stability of the denominator
         self.eps = eps
-        self.qkv_proj = nn.Linear(input_dim, 3 * embed_dim, bias=False)
+
+        # self.qkv_proj = nn.Linear(input_dim, 3 * embed_dim, bias=False)
+        self.query_mat = nn.Linear(input_dim, embed_dim, bias=False)
+        self.key_mat = nn.Linear(input_dim, embed_dim, bias=False)
+        self.value_mat = nn.Linear(input_dim, embed_dim, bias=False)
+
         self.o_proj = nn.Linear(embed_dim, embed_dim)
         self.feature_map = FeatureMap(feature_type=feature_map)
 
         self._reset_parameters()
 
     def _reset_parameters(self):
-        nn.init.xavier_uniform_(self.qkv_proj.weight)
+        # nn.init.xavier_uniform_(self.qkv_proj.weight)
+        nn.init.xavier_uniform_(self.query_mat.weight)
+        nn.init.xavier_uniform_(self.key_mat.weight)
+        nn.init.xavier_uniform_(self.value_mat.weight)
         nn.init.xavier_uniform_(self.o_proj.weight)
         self.o_proj.bias.data.fill_(0)
 
@@ -371,10 +398,15 @@ class LinearAttention(nn.Module):
         batch_size, seq_length, _ = x.size()  # [Batch, SeqLen, Dims]
         if mask is not None:
             raise NotImplementedError("mask is not supported yet")
-        qkv = self.qkv_proj(x)  # [Batch, SeqLen, 3 * Dims]
+        # qkv = self.qkv_proj(x)  # [Batch, SeqLen, 3 * Dims]
 
-        # Separate Q, K, V from linear output
-        q, k, v = qkv.chunk(3, dim=-1)  # 3*[Batch, SeqLen, Dims]
+        # # Separate Q, K, V from linear output
+        # q, k, v = qkv.chunk(3, dim=-1)  # 3*[Batch, SeqLen, Dims]
+
+        q = self.query_mat(x)  # [Batch, SeqLen, Dims]
+        k = self.key_mat(x)  # [Batch, SeqLen, Dims]
+        v = self.value_mat(x)  # [Batch, SeqLen, Dims]
+
         q = self.feature_map(q)
         k = self.feature_map(k)
 

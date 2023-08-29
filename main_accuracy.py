@@ -42,7 +42,9 @@ train_proportion = 0.9
 
 override_dicts = {
     ("Transformer", "NAB"): {
-        "epochs": 110,
+        "epochs": 300,
+        "gradient_clip_val": 0.01,
+        "max_lr": 0.1,
     }
 }
 
