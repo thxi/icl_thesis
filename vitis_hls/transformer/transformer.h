@@ -4,8 +4,8 @@
 #define PRINT_INTERMEDIATE_RESULTS
 
 // define dtypes used in layers
-typedef double din_t;
-typedef double dout_t;
+typedef float din_t;
+typedef float dout_t;
 
 #define INPUT_DIM 2
 #define SEQ_LEN 8
