@@ -172,7 +172,8 @@ def main(model_name, dataset_name, plots_root_dir=Path("tex/Figures/plots"), roo
             res, dataset_name=dataset_name, filename=plots_root_dir / f"{model_name}_{dataset_name}.png"
         )
 
-    return res
+    return_dict = {"model": model, "metrics": res}
+    return return_dict
 
 
 if __name__ == "__main__":

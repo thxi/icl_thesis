@@ -13,6 +13,29 @@
 
 int main() {
   using namespace std;
+  double xx[SEQ_LEN][2] = {
+      {0.2, 0.2}, {0.2, 0.2}, {0.4, 0.4}, {0.4, 0.4},
+      {0.6, 0.6}, {0.6, 0.6}, {0.8, 0.8}, {0.8, 0.8},
+  };
+
+  // for every element in the sequence, apply front linear
+  // front_linear is 8x2
+  // xx is 8x2
+  // so yy is 8x8
+  double yy[SEQ_LEN][8] = {0};
+
+  for (int i = 0; i < SEQ_LEN; i++) {
+    matmul<double, 8, 2, 1>(FRONT_LINEAR_WEIGHT, xx[i], yy[i]);
+    add_bias<double, 8>(yy[i], FRONT_LINEAR_BIAS);
+  }
+  cout << "yy: " << endl;
+  // print_mat_template<double, SEQ_LEN, 8>(yy);
+  print_mat((double*)yy, SEQ_LEN, 8);
+}
+
+/*
+int main() {
+  using namespace std;
   // print the array
   static double xx[SEQ_LEN][2] = {
       {-1, -1}, {-1, 0}, {-1, 1}, {0, -1}, {0, 0}, {0, 1}, {1, -1}, {1, 1},
@@ -352,3 +375,4 @@ int main() {
 
   return 0;
 }
+*/
