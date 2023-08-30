@@ -8,6 +8,8 @@ int main() {
       {0.2, 0.2}, {0.2, 0.2}, {0.4, 0.4}, {0.4, 0.4},
       {0.6, 0.6}, {0.6, 0.6}, {0.8, 0.8}, {0.8, 0.8},
   };
+  // din_t xx[SEQ_LEN][INPUT_DIM] = {{0, 0}, {0, 0}, {0, 0}, {0, 0},
+  //                                 {0, 0}, {0, 0}, {0, 0}, {0, 0}};
 
   din_t xx_flat[SEQ_LEN * INPUT_DIM];
   for (int i = 0; i < SEQ_LEN; i++) {
@@ -16,7 +18,7 @@ int main() {
     }
   }
 
-  dout_t tf_output = -1234567;
-  transformer(xx_flat, tf_output);
-  std::cout << "tf_output: " << tf_output << std::endl;
+  dout_t tf_output[1] = {-1234567};
+  transformer(xx_flat, (dout_t*)tf_output);
+  std::cout << "tf_output: " << tf_output[0] << std::endl;
 }
