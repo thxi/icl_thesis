@@ -147,7 +147,6 @@ multihead_attention_query_key:
   }
 
   // scale by 1/sqrt(D)
-  // TODO: check if autopipeline actually works
 multihead_attention_scale:
   T sqrtD = sqrt(D);
   for (int h = 0; h < H; h++) {
@@ -162,7 +161,9 @@ multihead_attention_scale:
 multihead_attention_softmax:
   T query_key_softmax[H][S][S] = {0};
   for (int h = 0; h < H; h++) {
+#pragma HLS PIPELINE off
     for (int i = 0; i < S; i++) {
+#pragma HLS PIPELINE off
       softmax<T, S>(query_key[h][i], query_key_softmax[h][i]);
     }
   }
@@ -213,8 +214,10 @@ template <typename T, int T1, int T2>
 void relu_inplace(T A[T1][T2]) {
 relu_inplace_loop_i:
   for (int i = 0; i < T1; i++) {
+#pragma HLS pipeline off
   relu_inplace_loop_j:
     for (int j = 0; j < T2; j++) {
+#pragma HLS pipeline off
       if (A[i][j] < 0) {
         A[i][j] = 0;
       }

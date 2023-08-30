@@ -204,5 +204,5 @@ transpose_heads:
   print_mat((dout_t*)final_layer_output, SEQ_LEN, 1);
 #endif
 
-  return second_linear_net_output[0][0];
+  return final_layer_output[0][0];
 }
