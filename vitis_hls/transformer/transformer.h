@@ -5,13 +5,14 @@
 typedef double din_t;
 typedef double dout_t;
 
-#define INPUT_LEN 2
+#define INPUT_DIM 2
 #define SEQ_LEN 8
 #define NUM_HEADS 2
 #define HEAD_DIM 4
+#define BLOCK_INPUT_DIM 8
 
 // toplevel function
-dout_t transformer(din_t xx[SEQ_LEN][INPUT_LEN]);
+dout_t transformer(din_t xx[SEQ_LEN][INPUT_DIM]);
 
 // for debugging
 void print_mat(const dout_t* mat, int T1, int T2);
