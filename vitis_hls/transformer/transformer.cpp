@@ -17,7 +17,24 @@ void print_mat(const dout_t* mat, int T1, int T2) {
 
 using namespace std;
 
-dout_t transformer(din_t xx[SEQ_LEN][INPUT_DIM]) {
+// input_array should be of size SEQ_LEN x INPUT_DIM
+void transformer(din_t* input_array, dout_t& val) {
+#pragma HLS INTERFACE m_axi port = input_array depth = 16 offset = \
+    slave bundle = GMEM0
+#pragma HLS INTERFACE s_axilite port = val
+#pragma HLS INTERFACE s_axilite port = return bundle = CONTROL
+
+  din_t xx[SEQ_LEN][INPUT_DIM] = {0};
+  for (int i = 0; i < SEQ_LEN; i++) {
+    for (int j = 0; j < INPUT_DIM; j++) {
+      xx[i][j] = input_array[i * INPUT_DIM + j];
+    }
+  }
+
+  val = transformer_for_sample(xx);
+}
+
+dout_t transformer_for_sample(din_t xx[SEQ_LEN][INPUT_DIM]) {
 // for every element in the sequence, apply front linear
 // front_linear is 8x2 but it is stored as a transposed matrix
 // so multiply on the right

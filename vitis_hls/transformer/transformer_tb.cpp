@@ -9,6 +9,14 @@ int main() {
       {0.6, 0.6}, {0.6, 0.6}, {0.8, 0.8}, {0.8, 0.8},
   };
 
-  dout_t tf_output = transformer(xx);
+  din_t xx_flat[SEQ_LEN * INPUT_DIM];
+  for (int i = 0; i < SEQ_LEN; i++) {
+    for (int j = 0; j < INPUT_DIM; j++) {
+      xx_flat[i * INPUT_DIM + j] = xx[i][j];
+    }
+  }
+
+  dout_t tf_output = -1234567;
+  transformer(xx_flat, tf_output);
   std::cout << "tf_output: " << tf_output << std::endl;
 }

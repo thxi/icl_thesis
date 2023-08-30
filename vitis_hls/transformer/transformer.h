@@ -14,7 +14,9 @@ typedef double dout_t;
 #define BLOCK_INPUT_DIM 8
 
 // toplevel function
-dout_t transformer(din_t xx[SEQ_LEN][INPUT_DIM]);
+void transformer(din_t* input_array, dout_t& val);
+
+dout_t transformer_for_sample(din_t xx[SEQ_LEN][INPUT_DIM]);
 
 // for debugging
 void print_mat(const dout_t* mat, int T1, int T2);
