@@ -17,10 +17,11 @@ void print_mat(const dout_t* mat, int T1, int T2) {
 
 using namespace std;
 
+// input_array should be of size SEQ_LEN x INPUT_DIM
 void transformer(din_t* input_array, dout_t* val) {
-#pragma HLS INTERFACE m_axi port = input_array depth = 50 offset = \
+#pragma HLS INTERFACE m_axi port = input_array depth = 16 offset = \
     slave bundle = axi_ports
-#pragma HLS INTERFACE m_axi port = val depth = 50 offset = slave bundle = \
+#pragma HLS INTERFACE m_axi port = val depth = 1 offset = slave bundle = \
     axi_ports
 #pragma HLS INTERFACE s_axilite port = return
 
@@ -33,28 +34,8 @@ void transformer(din_t* input_array, dout_t* val) {
     }
   }
 
-  val[0] = xx[0][0] + xx[0][1];
+  val[0] = transformer_for_sample(xx);
 }
-
-// input_array should be of size SEQ_LEN x INPUT_DIM
-// void transformer(din_t* input_array, dout_t* val) {
-// #pragma HLS INTERFACE m_axi port = input_array depth = 50 offset = \
-//     slave bundle = axi_ports
-// #pragma HLS INTERFACE m_axi port = val depth = 50 offset = slave bundle = \
-//     axi_ports
-// #pragma HLS INTERFACE s_axilite port = return
-
-//   din_t xx[SEQ_LEN][INPUT_DIM] = {0};
-//   for (int i = 0; i < SEQ_LEN; i++) {
-// #pragma HLS PIPELINE off
-//     for (int j = 0; j < INPUT_DIM; j++) {
-// #pragma HLS PIPELINE off
-//       xx[i][j] = input_array[i * INPUT_DIM + j];
-//     }
-//   }
-
-//   val[0] = transformer_for_sample(xx);
-// }
 
 dout_t transformer_for_sample(din_t xx[SEQ_LEN][INPUT_DIM]) {
 // for every element in the sequence, apply front linear

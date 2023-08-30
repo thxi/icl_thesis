@@ -18,6 +18,14 @@ int main() {
     }
   }
 
+#ifdef PRINT_INTERMEDIATE_RESULTS
+  std::cout << "xx_flat" << std::endl;
+  for (int i = 0; i < SEQ_LEN * INPUT_DIM; i++) {
+    std::cout << xx_flat[i] << ", ";
+  }
+  std::cout << std::endl;
+#endif
+
   dout_t tf_output[1] = {-1234567};
   transformer(xx_flat, (dout_t*)tf_output);
   std::cout << "tf_output: " << tf_output[0] << std::endl;
