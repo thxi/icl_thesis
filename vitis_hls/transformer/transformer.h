@@ -27,26 +27,6 @@ void print_mat_template(const T mat[T1][T2]) {
   }
 }
 
-// template <typename T, int M, int N, int K>
-// void kernel_mmult(T a[M * N], T b[N * K], T out[M * K]) {
-// loop_i:
-//   for (int i = 0; i < M; ++i) {
-// #pragma HLS PIPELINE off
-//   loop_j:
-//     for (int j = 0; j < N; ++j) {
-// #pragma HLS PIPELINE
-//       T sum = 0;
-//     loop_k:
-//       for (int k = 0; k < K; ++k) {
-// #pragma HLS UNROLL
-//         sum += a[i * N + k] * b[k * N + j];
-//       }
-//       out[i * M + j] = sum;
-//     }
-//   }
-//   return;
-// }
-
 template <typename T, int M, int N, int K>
 void kernel_mmult(const T a[M][N], const T b[N][K], T out[M][K]) {
 loop_i:

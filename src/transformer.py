@@ -115,6 +115,9 @@ class MultiheadAttention(nn.Module):
         q = q.reshape(batch_size, seq_length, self.num_heads, self.head_dim)
         k = k.reshape(batch_size, seq_length, self.num_heads, self.head_dim)
         v = v.reshape(batch_size, seq_length, self.num_heads, self.head_dim)
+        q = q.permute(0, 2, 1, 3)  # [Batch, Head, SeqLen, Dims]
+        k = k.permute(0, 2, 1, 3)  # [Batch, Head, SeqLen, Dims]
+        v = v.permute(0, 2, 1, 3)  # [Batch, Head, SeqLen, Dims]
 
         # Determine value outputs
         values, attention = scaled_dot_product(q, k, v, mask=mask)
