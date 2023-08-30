@@ -674,7 +674,6 @@ There are 3 different types of partitioning that can be applied to an array (Ref
 
 The disadvantage of partitioning is that it increases the number of memory interfaces
 which leads to the increased resource utilization (i.e., more FFs, LUTs are used because each memory block requires separate control logic).
-
 This can be partly mitigated by using the \textbf{array reshaping}.
 The difference between partitioning and reshaping is that partitioning
 creates multiple memory interfaces while reshaping still uses a single memory interface
@@ -1290,8 +1289,8 @@ In this paper, we will use the following metrics to compare the performance of t
         Linear Regression  & KPI     & 0.61/0.66 & 0.07/0.15 & 0.73/0.69 & 0.12/0.25 \\
                            & NAB     & 0.09/0.20 & 0.09/0.20 & 1.00/1.00 & 0.16/0.33 \\
         \hline
-        Transformer        & KPI     & 0.97/0.94 & 0.84/0.89 & 0.30/0.29 & 0.44/0.43 \\
-                           & NAB     & 0.71/0.72 & 0.15/0.37 & 0.46/0.60 & 0.22/0.46 \\
+        Transformer        & KPI     & 0.98/0.97 & 0.89/0.95 & 0.59/0.63 & 0.71/0.76 \\
+                           & NAB     & 0.76/0.75 & 0.16/0.41 & 0.39/0.55 & 0.23/0.47 \\
         \hline
         Linear Transformer & KPI     & 0.97/0.95 & 0.58/0.73 & 0.62/0.69 & 0.60/0.71 \\
                            & NAB     & 0.53/0.56 & 0.13/0.27 & 0.76/0.71 & 0.22/0.40 \\
@@ -1346,6 +1345,8 @@ the vanilla model.
 
 % TODO: write about inferred pragmas
 
+% TODO: describe numerically stable softmax: https://blester125.com/blog/softmax.html
+% also reference the transformer architecture which also mentions it
 
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
@@ -1427,4 +1428,4 @@ Evaluation of performance on more recent \textbf{labeled} financial market data.
 \bibliography{biblio}
 \addcontentsline{toc}{chapter}{Bibliography}
 
-\end{document}eport}
+\end{document}
