@@ -141,5 +141,68 @@ transpose_heads:
   print_mat((dout_t*)attention_values, SEQ_LEN, BLOCK_INPUT_DIM);
 #endif
 
-  return query_mat[0][0];
+  // o_proj, exiting the multihead attention
+  dout_t o_proj[SEQ_LEN][BLOCK_INPUT_DIM] = {0};
+  kernel_mmult<dout_t, SEQ_LEN, BLOCK_INPUT_DIM, BLOCK_INPUT_DIM>(
+      attention_values, TRANSFORMER_ENCODER_LAYERS_0_SELF_ATTN_O_PROJ_WEIGHT,
+      o_proj);
+  kernel_bias_add<dout_t, SEQ_LEN, BLOCK_INPUT_DIM>(
+      o_proj, TRANSFORMER_ENCODER_LAYERS_0_SELF_ATTN_O_PROJ_BIAS, o_proj);
+
+#ifdef PRINT_INTERMEDIATE_RESULTS
+  cout << "o_proj: " << endl;
+  print_mat((dout_t*)o_proj, SEQ_LEN, BLOCK_INPUT_DIM);
+#endif
+
+  // linear net
+  // TODO: maybe its a bit dirty that I hardcode the
+  // 2 * BLOCK_INPUT_DIM here
+  dout_t first_linear_net_output[SEQ_LEN][2 * BLOCK_INPUT_DIM] = {0};
+  kernel_mmult<dout_t, SEQ_LEN, BLOCK_INPUT_DIM, 2 * BLOCK_INPUT_DIM>(
+      o_proj, TRANSFORMER_ENCODER_LAYERS_0_LINEAR_NET_0_WEIGHT,
+      first_linear_net_output);
+  kernel_bias_add<dout_t, SEQ_LEN, 2 * BLOCK_INPUT_DIM>(
+      first_linear_net_output, TRANSFORMER_ENCODER_LAYERS_0_LINEAR_NET_0_BIAS,
+      first_linear_net_output);
+
+#ifdef PRINT_INTERMEDIATE_RESULTS
+  cout << "first_linear_net_output: " << endl;
+  print_mat((dout_t*)first_linear_net_output, SEQ_LEN, 2 * BLOCK_INPUT_DIM);
+#endif
+
+  // ReLU
+  relu_inplace<dout_t, SEQ_LEN, 2 * BLOCK_INPUT_DIM>(first_linear_net_output);
+
+#ifdef PRINT_INTERMEDIATE_RESULTS
+  cout << "first_linear_net_output after ReLU: " << endl;
+  print_mat((dout_t*)first_linear_net_output, SEQ_LEN, 2 * BLOCK_INPUT_DIM);
+#endif
+
+  // second linear net
+  dout_t second_linear_net_output[SEQ_LEN][BLOCK_INPUT_DIM] = {0};
+  kernel_mmult<dout_t, SEQ_LEN, 2 * BLOCK_INPUT_DIM, BLOCK_INPUT_DIM>(
+      first_linear_net_output, TRANSFORMER_ENCODER_LAYERS_0_LINEAR_NET_3_WEIGHT,
+      second_linear_net_output);
+  kernel_bias_add<dout_t, SEQ_LEN, BLOCK_INPUT_DIM>(
+      second_linear_net_output, TRANSFORMER_ENCODER_LAYERS_0_LINEAR_NET_3_BIAS,
+      second_linear_net_output);
+
+#ifdef PRINT_INTERMEDIATE_RESULTS
+  cout << "second_linear_net_output: " << endl;
+  print_mat((dout_t*)second_linear_net_output, SEQ_LEN, BLOCK_INPUT_DIM);
+#endif
+
+  // final_layer
+  dout_t final_layer_output[SEQ_LEN][1] = {0};
+  kernel_mmult<dout_t, SEQ_LEN, BLOCK_INPUT_DIM, 1>(
+      second_linear_net_output, FINAL_LINEAR_WEIGHT, final_layer_output);
+  kernel_bias_add<dout_t, SEQ_LEN, 1>(final_layer_output, FINAL_LINEAR_BIAS,
+                                      final_layer_output);
+
+#ifdef PRINT_INTERMEDIATE_RESULTS
+  cout << "final_layer_output: " << endl;
+  print_mat((dout_t*)final_layer_output, SEQ_LEN, 1);
+#endif
+
+  return second_linear_net_output[0][0];
 }

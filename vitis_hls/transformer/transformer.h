@@ -208,6 +208,20 @@ concat_head_loop_i:
   }
 }
 
+// relu inplace on 2d array
+template <typename T, int T1, int T2>
+void relu_inplace(T A[T1][T2]) {
+relu_inplace_loop_i:
+  for (int i = 0; i < T1; i++) {
+  relu_inplace_loop_j:
+    for (int j = 0; j < T2; j++) {
+      if (A[i][j] < 0) {
+        A[i][j] = 0;
+      }
+    }
+  }
+}
+
 // helper function to transpose first two dimensions of a 3d array
 // used for multihead attention
 template <typename T, int T1, int T2, int T3>
