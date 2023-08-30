@@ -9,8 +9,7 @@ import numpy as np
 import pandas as pd
 import torch
 from lightning.pytorch import seed_everything
-from sklearn.metrics import (f1_score, precision_score, recall_score,
-                             roc_auc_score)
+from sklearn.metrics import f1_score, precision_score, recall_score, roc_auc_score
 from sklearn.preprocessing import MinMaxScaler
 from torch.utils.data import DataLoader, TensorDataset
 
@@ -196,16 +195,18 @@ def prepare_dataset_for_evaluation(
     return tr_dl, va_dl, tr_cols
 
 
-# a function to get precision/recall/AUC/F1 from y_true and y_pred
+# a function to get accuracy/precision/recall/AUC/F1 from y_true and y_pred
 def get_metrics(y_true, y_pred):
     res = {}
     with warnings.catch_warnings():
         warnings.simplefilter("ignore")
 
+        accuracy = np.mean(y_true == y_pred)
         precision = precision_score(y_true, y_pred)
         recall = recall_score(y_true, y_pred)
         auc = roc_auc_score(y_true, y_pred)
         f1 = f1_score(y_true, y_pred)
+    res["accuracy"] = accuracy
     res["precision"] = precision
     res["recall"] = recall
     res["auc"] = auc

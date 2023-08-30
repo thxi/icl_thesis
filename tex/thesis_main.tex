@@ -71,8 +71,8 @@
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %% Sets page size and margins
 \usepackage[a4paper,top=3cm,bottom=2cm,left=3cm,right=3cm,marginparwidth=1.75cm]{geometry}
-\title{Solving the Collatz conjecture}
-\author{Ilia Sobakinskikh  (CID: 00000000)}
+\title{Optimizing Transformer Neural Network for Real-Time Outlier Detection}
+\author{Ilia Sobakinskikh  (CID: 02273801)}
 
 % for the confusion matrix: https://tex.stackexchange.com/a/20284
 \usepackage{tikz}
@@ -734,7 +734,7 @@ For this baseline implementation, we are reaching a latency of 205 clock cycles,
 \end{figure}
 
 
-\subsubsection{Loop pipelining and unrolling}
+\subsubsection{Loop pipelining and unrolling} \label{sec:loop_pipelining_unrolling}
 
 The baseline code can be optimized by pipelining.
 There are three loops that can be pipelined (\texttt{loop\_i}, \texttt{loop\_j} and \texttt{loop\_k}).
@@ -1193,35 +1193,40 @@ the following notation:
 The confusion matrix is a table with two rows and two columns that reports the number of false positives, false negatives, true positives, and true negatives.
 
 % https://tex.stackexchange.com/a/20274
-\begin{tikzpicture}[
-        box/.style={draw,rectangle,minimum size=2cm,text width=1.5cm,align=left}]
-    \matrix (conmat) [row sep=.1cm,column sep=.1cm] {
-        \node (tpos) [box,
-            label=left:\( \mathbf{P'} \),
-            label=above:\( \mathbf{P} \),
-        ] {True \\ positive \textbf{TP}};
-         &
-        \node (fneg) [box,
-            label=above:\textbf{n},
-            label=above right:\textbf{total},
-            label=right:\( \mathrm{P}' \)
-        ]{False \\ negative \textbf{FN}};
-        \\
-        \node (fpos) [box,
-            label=left:\( \mathbf{N'} \),
-            label=below left:\textbf{total},
-            label=below:P
-        ] {False \\ positive \textbf{FP}};
-         &
-        \node (tneg) [box,
-            label=right:\( \mathrm{N}' \),
-            label=below:N
-        ] {True \\ negative \textbf{TN}};
-        \\
-    };
-    \node [left=.05cm of conmat,text width=1.5cm,align=right] {\textbf{actual \\ value}};
-    \node [above=.05cm of conmat] {\textbf{prediction outcome}};
-\end{tikzpicture}
+\begin{figure}[h!]
+    \begin{center}
+        \begin{tikzpicture}[
+                box/.style={draw,rectangle,minimum size=2cm,text width=1.5cm,align=left}]
+            \matrix (conmat) [row sep=.1cm,column sep=.1cm] {
+                \node (tpos) [box,
+                    label=left:\( \mathbf{P'} \),
+                    label=above:\( \mathbf{P} \),
+                ] {True \\ positive \textbf{TP}};
+                 &
+                \node (fneg) [box,
+                    label=above:\textbf{n},
+                    label=above right:\textbf{total},
+                    label=right:\( \mathrm{P}' \)
+                ]{False \\ negative \textbf{FN}};
+                \\
+                \node (fpos) [box,
+                    label=left:\( \mathbf{N'} \),
+                    label=below left:\textbf{total},
+                    label=below:P
+                ] {False \\ positive \textbf{FP}};
+                 &
+                \node (tneg) [box,
+                    label=right:\( \mathrm{N}' \),
+                    label=below:N
+                ] {True \\ negative \textbf{TN}};
+                \\
+            };
+            \node [left=.05cm of conmat,text width=1.5cm,align=right] {\textbf{actual \\ value}};
+            \node [above=.05cm of conmat] {\textbf{prediction outcome}};
+        \end{tikzpicture}
+        \caption{Confusion matrix description}
+    \end{center}
+\end{figure}
 
 The matrix summarizes the predictions from a classification model, i.e.,
 how well the model performed when predicting the class labels for positive
@@ -1270,10 +1275,61 @@ In this paper, we will use the following metrics to compare the performance of t
 
 \subsection{Comparison}
 
-% for metrics example: https://www.mdpi.com/1999-4893/15/10/385`'
+% for metrics example: https://www.mdpi.com/1999-4893/15/10/385
 % or this: https://thesis.unipd.it/retrieve/840738c1-c175-4529-b5e5-795b393a36a2/Baron_Alex.pdf
+% I will mostly try to follow the above papers for reporting (e.g., summary tables, plots)
 
-\section{Performance/Speed}
+% TODO: maybe highlight the best model in bold in the tables
+% TODO: maybe reorder dataset and model columns
+\begin{table}[h!]
+    \centering
+    \begin{tabular}{|c|c|c|c|c|c|}
+        \hline
+        Model              & Dataset & Accuracy  & Precision & Recall    & F1        \\
+        \hline
+        Linear Regression  & KPI     & 0.61/0.66 & 0.07/0.15 & 0.73/0.69 & 0.12/0.25 \\
+                           & NAB     & 0.09/0.20 & 0.09/0.20 & 1.00/1.00 & 0.16/0.33 \\
+        \hline
+        Transformer        & KPI     & 0.97/0.94 & 0.84/0.89 & 0.30/0.29 & 0.44/0.43 \\
+                           & NAB     & 0.71/0.72 & 0.15/0.37 & 0.46/0.60 & 0.22/0.46 \\
+        \hline
+        Linear Transformer & KPI     & 0.97/0.95 & 0.58/0.73 & 0.62/0.69 & 0.60/0.71 \\
+                           & NAB     & 0.53/0.56 & 0.13/0.27 & 0.76/0.71 & 0.22/0.40 \\
+        \hline
+    \end{tabular}
+    \caption{Final metrics. The reported value are for the train and validation set.}
+    \label{tab:final_metrics}
+\end{table}
+
+The final metrics for the models are presented in Table \ref{tab:final_metrics}.
+Refer to the Appendix \ref{app:training_plots} for the training plots for the models.
+
+The Transformer model outperforms the other models on all datasets. And that
+is expected because the Transformer model is more complex (i.e., has more parameters)
+than the other models. However, the Linear Transformer model performs almost as well
+and it provides better performance-resource utilization tradeoff (see Section \ref{sec:performance}).
+
+In terms of training robustness (i.e., how stable the training is, refer to Section \ref{sec:training}),
+a simple Linear Regression model is the most stable model, as expected. Both Transformer models suffer
+from the gradient explosion problem which leads to unstable training
+which can be partially remediated (see Section \ref{sec:gradient_clipping}).
+
+However, the performance of a simple Linear regression depends on the dataset. For example,
+the Linear regression is not able to learn the patterns in the NAB dataset
+and is stuck at predicting only the positive samples (i.e., anomalies).
+As for the KPI dataset, the performance on the KPI can be tweaked by training
+the model for a different number of epochs to achieve the required balance between
+precision and recall (refer to Figure \ref{fig:LinearRegression_KPI_training}).
+Both Transformer models, on the other hand, perform equally well on both datasets
+as long as there is no gradient explosion problem.
+
+\textbf{In short}, Transformer models outperform the simple linear regression
+but can have unstable training. Linear Transformer model is slightly behind
+the vanilla model.
+
+% TODO: maybe expand, but probably that's the main takeaway
+
+\section{Performance/Speed} \label{sec:performance}
 
 % https://xilinx.github.io/Vitis-Tutorials/2021-2/build/html/docs/Getting_Started/Vitis_HLS/dataflow_design.html
 
@@ -1294,20 +1350,74 @@ In this paper, we will use the following metrics to compare the performance of t
 \newpage
 \chapter*{Conclusion}
 
-\section{Future work}
-Bigger FPGA boards.
+% TODO: go through the work and see if you missed something
+% just a very short draft with ideas for now
+There are different optimizations: they have performance-resource utilization tradeoffs.
+For optimal design that fits the board (in terms of resource utilization),
+you need to tweak certain parts of algorithms (for example, performing loop
+reordering instead of pipelining, see Section \ref{sec:mm_loop_reordering}).
 
-Evaluation of performance on more recent financial market data.
+\section{Future work}
+Trying bigger FPGA boards for maximum performance (e.g., loop pipelining as in Section \ref{sec:loop_pipelining_unrolling}).
+
+Evaluation of performance on more recent \textbf{labeled} financial market data.
 
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 \newpage
 \appendix
-\chapter{Code}
-\section{Efficient matrix multiplication}\label{app:Appendix}
-This is Appendix~\ref{app:Appendix}, which usually contained supporting material,
-or complicated proofs that might make the main text above less readable / fluid.
+\chapter{Training plots} \label{app:training_plots}
+
+% Transformer KPI
+\begin{figure}[h!]
+    \centering
+    \caption{Training metrics for different epochs for Transformer model on KPI dataset}
+    \includegraphics[width=\textwidth]{plots/Transformer_KPI.png}
+    \label{fig:Transformer_KPI_training}
+\end{figure}
+
+% Transformer NAB
+\begin{figure}[h!]
+    \centering
+    \caption{Training metrics for different epochs for Transformer model on NAB dataset}
+    \includegraphics[width=\textwidth]{plots/Transformer_NAB.png}
+    \label{fig:Transformer_NAB_training}
+\end{figure}
+
+% Linear Transformer KPI
+\begin{figure}[h!]
+    \centering
+    \caption{Training metrics for different epochs for Linear Transformer model on KPI dataset}
+    \includegraphics[width=\textwidth]{plots/LinearTransformer_KPI.png}
+    \label{fig:LinearTransformer_KPI_training}
+\end{figure}
+
+% Linear Transformer NAB
+\begin{figure}[h!]
+    \centering
+    \caption{Training metrics for different epochs for Linear Transformer model on NAB dataset}
+    \includegraphics[width=\textwidth]{plots/LinearTransformer_NAB.png}
+    \label{fig:LinearTransformer_NAB_training}
+\end{figure}
+
+% Linear Regression KPI
+\begin{figure}[h!]
+    \centering
+    \caption{Training metrics for different epochs for Linear Regression model on KPI dataset}
+    \includegraphics[width=\textwidth]{plots/LinearRegression_KPI.png}
+    \label{fig:LinearRegression_KPI_training}
+\end{figure}
+
+% Linear Regression NAB
+\begin{figure}[h!]
+    \centering
+    \caption{Training metrics for different epochs for Linear Regression model on NAB dataset}
+    \includegraphics[width=\textwidth]{plots/LinearRegression_NAB.png}
+    \label{fig:LinearRegression_NAB_training}
+\end{figure}
+
+
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
@@ -1315,4 +1425,4 @@ or complicated proofs that might make the main text above less readable / fluid.
 \bibliography{biblio}
 \addcontentsline{toc}{chapter}{Bibliography}
 
-\end{document}
+\end{document}eport}

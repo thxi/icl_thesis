@@ -8,11 +8,6 @@ import torch
 
 import torch.nn as nn
 
-import matplotlib.pyplot as plt
-import numpy as np
-import pandas as pd
-import seaborn as sns
-
 from src.utils import MetricTracker
 from src.transformer import TransformerAnomalyDetector
 from src.transformer import LinearRegressionAnomalyDetector
@@ -35,7 +30,7 @@ logging.basicConfig(
 )
 logger.setLevel(logging.INFO)
 
-ROOT_DATA_DIR = Path("data/")
+DEFAULT_ROOT_DATA_DIR = Path("data/")
 batch_size = 2 * 4096
 window_size = 8
 train_proportion = 0.9
@@ -137,7 +132,7 @@ def get_model(model_name, input_dim, window_size=8, override_params_dict=None):
     return ret_dict
 
 
-def main(model_name, dataset_name):
+def main(model_name, dataset_name, plots_root_dir=Path("tex/Figures/plots"), root_data_dir=DEFAULT_ROOT_DATA_DIR):
     seed_everything(1)
 
     tr_dl, va_dl, tr_cols = prepare_dataset_for_evaluation(
@@ -145,7 +140,7 @@ def main(model_name, dataset_name):
         window_size=window_size,
         train_proportion=train_proportion,
         batch_size=batch_size,
-        root_data_dir=ROOT_DATA_DIR,
+        root_data_dir=root_data_dir,
     )
 
     override_params_dict = override_dicts.get((model_name, dataset_name), None)
@@ -172,7 +167,12 @@ def main(model_name, dataset_name):
     # for plots
     mt = trainer.callbacks[1]
     res = get_metrics_from_tracker(mt)
-    plot_metrics_from_tracker(res, dataset_name=dataset_name, filename=f"plots/{model_name}_{dataset_name}.png")
+    if plots_root_dir is not None:
+        plot_metrics_from_tracker(
+            res, dataset_name=dataset_name, filename=plots_root_dir / f"{model_name}_{dataset_name}.png"
+        )
+
+    return res
 
 
 if __name__ == "__main__":
@@ -183,6 +183,6 @@ if __name__ == "__main__":
 
     args = parser.parse_args()
 
-    main(model_name=args.model, dataset_name=args.dataset)
+    metrics_res = main(model_name=args.model, dataset_name=args.dataset)
 
     logger.info("Finished main")
