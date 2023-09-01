@@ -184,7 +184,6 @@ architectures for time series modeling, especially in the realm of anomaly detec
 numerous advantages, including the ability to capture long-range dependencies and
 intricate interactions within the data.
 
-
 The evolution of hardware, for example, the growing utilization of
 field-programmable gate arrays (FPGAs), has brought about increased computational capabilities
 due to their reconfigurability, high performance and deterministic latency. These FPGAs can be
@@ -209,24 +208,38 @@ The main contributions of this paper are as follows:
 
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-\chapter{Methodology}
 
-In this chapter, we will describe the main concepts and ideas used in this work.
-The reader will be introduced to the main concepts of the Transformer architecture and how it can be used for anomaly detection in time series.
-Finally, the main concepts of programming an FPGA will be introduced and the specific optimizations that can be applied to speed up the computations.
+\chapter{Problem statement}
 
-\section{Problem Formulation}
+In this chapter, we will describe the problem statement of anomaly detection task.
 
+\section{Definitions and examples}
 
 \begin{definition}
-    We consider a \textbf{time-series} $\mathcal{T}$ which is simply a timestamped sequence of observations $x_i \in R^n$.
+    We consider a \textbf{time-series} $\mathcal{T}$ which is simply a timestamped sequence of observations $x_i \in R^n$,
+    potentially with some metadata $y_i$.
 \end{definition}
-\begin{remark}
-    Most of the times we will consider univariate case, i.e. $n=1$.
-    An example of this is a price time-series of a single stock.
-    However, the multivariate case is also important and we will consider it in the experiments.
-    For example, one can consider a time-series of prices of multiple stocks to get a multivariate time series.
-\end{remark}
+
+Most of the times we will consider univariate case, i.e. $n=1$.
+An example of this is a price time-series of a single stock.
+However, the multivariate case is also important and we will consider it in the experiments.
+For example, one can consider a time-series of prices of multiple stocks to get a multivariate time series or
+one can also create features (for example, by calculating the \textbf{differenced time series})
+on the original time-series to get a multivariate time-series.
+
+\begin{definition}
+    The \textbf{differenced time series} is a time-series $\mathcal{T}$ where each observation $x_i$ is simply the difference
+    between the current and the previous observation.
+    That is, $x_i=x_{i-1}-x_i$.
+\end{definition}
+
+\begin{figure}[h!]
+    \centering
+    \includegraphics[width=\textwidth]{etc/apple_time_series.pdf}
+    \caption{Sample mutli-variate time-series of Apple stock price. The blue line are the close prices
+        and the red line is the differenced close prices.}
+    \label{fig:apple_time_series}
+\end{figure}
 
 
 \begin{definition}
@@ -242,6 +255,53 @@ where the labels $y_i$ are known for the \emph{seen} (or training) part of the d
     However, one issue with the unsupervised task is that it is hard to evaluate
     the performance (i.e., accuracy) of the model's predictions \cite{1905.05667}.
 \end{remark}
+
+
+\section{Different Anomalies Types}
+
+Although there is no universally accepted definition of an anomaly,
+there exists a common classification of \textit{synthetic} anomalies into different types. For a broad comprehensive review,
+reader is referred to \cite{Steinbuss2020GeneratingAO}, \cite{Schmidl2022AnomalyDI}.
+
+In this work, we will only consider \textbf{Point anomalies} types since
+the main focus of this work is to show the superior performance of the Transformer architecture
+but to show that it can be efficiently implemented on an FPGA board.
+
+\begin{definition}
+    \textbf{Point anomalies} are individual data points that are considered anomalous with respect to the rest of the data.
+    For example, a point anomaly can be a sudden spike in the price of a stock. See Figure \ref{fig:apple_time_series}.
+
+    Mathematically, we could define a point anomaly as follows:
+    \begin{equation}
+        x_i = \begin{cases}
+            x^{\text{original}}_i + S & y_i=1            \\
+            x^{\text{original}}       & \text{otherwise}
+        \end{cases}
+    \end{equation}
+    where $x^{\text{original}}$ is the original time-series (as if there was no outliers)
+    and $S$ is the spike.
+
+\end{definition}
+
+
+\begin{figure}[h!]
+    \centering
+    \includegraphics[width=\textwidth]{etc/apple_outliers.pdf}
+    \caption{Apple stock modified time series with injected \textbf{Point anomalies}.
+        Top panel: price time series and its distribution.
+        Bottom panel: differenced price time series and its distribution.}
+    \label{fig:apple_time_series_outliers}
+\end{figure}
+
+
+
+
+\chapter{Methodology}
+
+In this chapter, we will describe the main concepts and ideas used in this work.
+The reader will be introduced to the main concepts of the Transformer architecture and how it can be used for anomaly detection in time series.
+Finally, the main concepts of programming an FPGA will be introduced and the specific optimizations that can be applied to speed up the computations.
+
 
 
 \section{Transformers}
@@ -775,7 +835,7 @@ loop_i:
 
 The Vitis HLS Synthesis Report for the naive implementation is presented in Figure \ref{fig:matmul_naive_synth}.
 The data types for matrices used are int32\_t. Matrix A is of size 3x4 and matrix B has size 4x3.
-For this baseline implementation, we are reaching a latency of 205 clock cycles, using 0 BRAMs, 327 FF and 282 LUTs.
+For this baseline implementation, we are reaching a latency of 205 clock cycles, using 327 FF and 282 LUTs.
 
 
 \begin{figure}[h!]
