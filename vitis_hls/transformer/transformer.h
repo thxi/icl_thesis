@@ -216,10 +216,10 @@ template <typename T, int T1, int T2>
 void relu_inplace(T A[T1][T2]) {
 relu_inplace_loop_i:
   for (int i = 0; i < T1; i++) {
-#pragma HLS pipeline off
+#pragma HLS UNROLL
   relu_inplace_loop_j:
     for (int j = 0; j < T2; j++) {
-#pragma HLS pipeline off
+#pragma HLS UNROLL
       if (A[i][j] < 0) {
         A[i][j] = 0;
       }
@@ -248,9 +248,7 @@ transpose_3d_loop_i:
 template <typename T, int T1, int T2>
 void transpose(const T* A, T* result) {
   for (int i = 0; i < T1; i++) {
-#pragma HLS pipeline off
     for (int j = 0; j < T2; j++) {
-#pragma HLS pipeline off
       result[j * T1 + i] = A[i * T2 + j];
     }
   }

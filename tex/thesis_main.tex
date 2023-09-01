@@ -364,7 +364,7 @@ to get a vector of dimension $2d$. In this work, we will use the former approach
     \label{fig:pos_encoding}
 \end{figure}
 
-\subsection{Encoder Block}
+\subsection{Encoder Block} \label{sec:encoder_block}
 
 The encoder consists of $N$ identical layers. Each layer has two sub-layers which are a
 \textbf{multi-head self-attention} layer (described in detail in Section \ref{sec:dot_product_attention})
@@ -518,38 +518,36 @@ tuning and that it can be efficiently implemented on an FPGA board.
 
 % maybe not needed here and can just add to the bottom
 
-\chapter{Methodology}
+\chapter{FPGA design} \label{sec:fpga_design}
 
-The reader will be introduced to the main concepts of the Transformer architecture and how it can be used for anomaly detection in time series.
-Finally, the main concepts of programming an FPGA will be introduced and the specific optimizations that can be applied to speed up the computations.
+In this section, the main concepts of programming an FPGA will be introduced
+and the specific optimizations that can be applied to speed up the
+computations.
 
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-\section{FPGA design}
+Readers will be introduced to the common optimization techniques and how they
+are achieved. An matrix multiplication example will be provided to illustrate the concepts and
+how the optimizations affect the latency and resource utilization.
 
-% Main xilinx docs:
-% https://docs.xilinx.com/r/en-US/ug1399-vitis-hls/Summary?tocId=xCTL3tR5AjP_FFYmRfl81Q
+Lastly, the analysis of the specific optimizations that can be applied to the Transformer architecture
+will be provided.
 
-In this section, the main design principles of programming an FPGA board will be described. Readers will be introduced to the common optimization techniques and how they are achieved. The FPGA programming will be done using C++ HLS which is converted to verilog code.
+\section{Introduction to FPGA programming and development} \label{sec:fpga_development}
 
-\subsection{Introduction to FPGA}
+In this section, we will introduce the main concepts of FPGA programming and development tools.
 
-% for efficient implementation reference:
-% https://pytorch.org/tutorials/intermediate/scaled_dot_product_attention_tutorial.html?utm_source=whats_new_tutorials&utm_medium=scaled_dot_product_attention_tutorial
+% TODO: maybe move that to intro, but intro already has similar paragraph... maybe it is better to have it here
+% or just remove it...
+% The progress of hardware acceleration devices like field-programmable gate arrays (FPGAs) enables the achievement of
+% lower power consumption and minimized latency \cite{10.1007/978-3-319-56258-2_14}.
+% They are commonly used to accelerate high-performance, computationally intensive systems
+% (for example, data centers) or to minimize the latency of execution (for example, in high-frequency trading).
 
-% TODO: maybe rewrite
-The progress of hardware acceleration devices like field-programmable gate arrays (FPGAs) enables the achievement of high component density and low power consumption,
-all the while minimizing latency \cite{10.1007/978-3-319-56258-2_14}.
-They are commonly used to accelerate high-performance, computationally intensive systems
-(for example, data centers) or to minimize the latency of execution (for example, in high-frequency trading).
-
-\subsection{FPGA development} \label{sec:fpga_development}
-
-\subsubsection{Common Terms}
+\subsection{Common Terms}
 
 In this section, common terms will be introduced.
-The terms will be used throughout Section \ref{sec:fpga_development}.
+The terms will be used throughout Chapter \ref{sec:fpga_design}.
 It is not required to read all of them at once, but it is recommended to refer to this section
-when a term is not clear and the reader can refer to this section when necessary.
+when a term is not clear (i.e., only when necessary).
 
 \begin{definition}
     \textbf{LUT (Look-Up Table)} is a small, fast memory that stores the output of a Boolean function of its inputs.
@@ -559,7 +557,7 @@ when a term is not clear and the reader can refer to this section when necessary
     \textbf{BRAM (Block RAM)} is a dedicated two-port memory that can be used to store data.
 \end{definition}
 \begin{definition}
-    \textbf{DSP (Digital Signal Processing)} is a specialized hardware unit that is optimized for performing mathematical operations on streaming data.
+    \textbf{DSP (Digital Signal Processing)} is a specialized hardware unit that is optimized for performing mathematical operations.
 \end{definition}
 \begin{definition}
     \textbf{Clock cycle} is the time between two consecutive rising edges of the clock signal.
@@ -580,7 +578,7 @@ when a term is not clear and the reader can refer to this section when necessary
     That is, it is the maximum rate (in clock cycles) at which loop iterations can be initiated.
     In the ideal case, the II is equal to 1 so that we can start a new iteration of the loop every clock cycle.
     Initiation interval is different from latency.
-    The reason for this is pipelining which will be described in Section \ref{sec:pipelining}.
+    The reason for this is pipelining which will be described in Section \ref{sec:loop_pipelining}.
     For a visual explanation, see Figure \ref{fig:latency_vs_ii}.
 \end{definition}
 \begin{definition}
@@ -628,7 +626,7 @@ functionality of your design before actually programming it onto the FPGA hardwa
     The process is very similar to running a software program on a computer for
     the purpose of unit testing certain parts of functionality of your code
     \cite{AMD2023VitisSimCosim}. That is, the simulation does not
-    involve any RTL code and is simply a software simulation of the high-level description..
+    involve any RTL code and is simply a software simulation of the high-level description.
 \end{definition}
 
 \begin{remark}
@@ -642,7 +640,6 @@ functionality of your design before actually programming it onto the FPGA hardwa
     \cite{AMD2023VitisSimCosim}.
 \end{definition}
 
-
 \subsection{Common optimizations} \label{sec:common_optimizations}
 
 In this section, common optimization techniques and how they are achieved will be introduced.
@@ -655,7 +652,6 @@ and it is the area where most of the optimizations are applied first \cite{AMD20
 
 \subsubsection{Loop Pipelining} \label{sec:loop_pipelining}
 
-% sounds very general to me....
 Loop pipelining is a technique used in FPGAs programming to optimize the performance of sequential operations within a loop.
 It improves the throughput of loops by breaking them down into multiple stages
 that can execute concurrently.
@@ -666,7 +662,6 @@ Refer to Figure \ref{fig:loop_pipelining} and Figure \ref{fig:latency_vs_ii} for
 % also good examples here
 % https://wiki.york.ac.uk/display/RTS/Practical+4+-+Vitis+HLS
 
-
 \begin{figure}[h!]
     \centering
     \includegraphics[scale=0.7]{loop_pipelining.png}
@@ -675,11 +670,8 @@ Refer to Figure \ref{fig:loop_pipelining} and Figure \ref{fig:latency_vs_ii} for
 \end{figure}
 
 
-% TODO: maybe just leave it as normal text without using \begin{exa}
-% the style is a bit strange...
-\begin{exa}
-    Consider example of pipelining a simple for loop which adds 2 vectors (\cite{AMD2023Pipelining}):
-    \begin{lstlisting}[language=c++,numbers=none]
+Consider example of pipelining a simple for loop which adds 2 vectors (\cite{AMD2023Pipelining}):
+\begin{lstlisting}[language=c++,numbers=none]
 void toplevel(int* a, int* b, int* c, int len) {
 	vadd: for(int i = 0; i < len; i++) {
 #pragma HLS PIPELINE
@@ -688,25 +680,23 @@ void toplevel(int* a, int* b, int* c, int len) {
 }
 \end{lstlisting}
 
-    Taking the reference numbers from \cite{AMD2023Pipelining},
-    assume that len is 20 and that one loop iteration takes 3 clock cycles,
-    then the total latency of the loop is 60 clock cycles without pipelining.
+Taking the reference numbers from \cite{AMD2023Pipelining},
+assume that len is 20 and that one loop iteration takes 3 clock cycles,
+then the total latency of the loop is 60 clock cycles without pipelining.
+The pipelining pragma \texttt{\#pragma HLS PIPELINE} allows to start
+the next iteration of the loop before the current iteration has finished.
+By default, the pipelining pragma will try to achieve an II of 1 but this
+can be specified manually by using the \texttt{II} parameter.
+So, the pipelining pragma reduces the latency of the loop to 22 clock cycles.
 
-    The pipelining pragma \texttt{\#pragma HLS PIPELINE} allows to start
-    the next iteration of the loop before the current iteration has finished.
+In general, the latency of a loop with pipelining is given by the following formula \cite{intelpipelineloopsII}:
+\begin{equation}
+    \text{Latency} = \text{II} \cdot (\text{Trip Count} - 1) + \text{Loop Body Latency}
+\end{equation}
 
-    By default, the pipelining pragma will try to achieve an II of 1 but this
-    can be specified manually by using the \texttt{II} parameter.
+% a dumb simple example of calculations: https://support.xilinx.com/s/question/0D52E00006hprvzSAA/hls-loop-pipeline-and-iteration-latency?language=en_US
+% and also a dumb example with formula for different II: https://www.intel.com/content/www/us/en/docs/programmable/683152/21-3/pipeline-loops.html
 
-    % a dumb simple example of calculations: https://support.xilinx.com/s/question/0D52E00006hprvzSAA/hls-loop-pipeline-and-iteration-latency?language=en_US
-    % and also a dumb example with formula for different II: https://www.intel.com/content/www/us/en/docs/programmable/683152/21-3/pipeline-loops.html
-    So, the pipelining pragma reduces the latency of the loop to 22 clock cycles.
-
-    In general, the latency of a loop with pipelining is given by the following formula:
-    \begin{equation}
-        \text{Latency} = \text{II} \cdot (\text{Trip Count} - 1) + \text{Loop Body Latency}
-    \end{equation}
-\end{exa}
 
 \begin{remark}
     It is not always possible to achieve an II of 1.
@@ -734,10 +724,9 @@ and loop iterations will utilize different hardware resources.
 This increase in performance (i.e., throughput) comes at the cost of increased
 resource utilization \cite{AMD2023Pipelining}.
 
-\begin{exa}
-    Consider a simple example of a function which multiplies the
-    input vector of length 4 by a constant, 2:
-    \begin{lstlisting}[language=c++,numbers=none]
+Consider a simple example of a function which multiplies the
+input vector of length 4 by a constant, 2:
+\begin{lstlisting}[language=c++,numbers=none]
 void toplevel(int* a, int* b) {
 	smult: for(int i = 0; i < 4; i++) {
 #pragma UNROLL
@@ -746,12 +735,11 @@ void toplevel(int* a, int* b) {
 }
 \end{lstlisting}
 
-    The unroll pragma \texttt{\#pragma UNROLL} allows to unroll the loop and execute
-    the loop iterations in parallel.
+The unroll pragma \texttt{\#pragma UNROLL} allows to unroll the loop and execute
+the loop iterations in parallel.
 
-    The unrolled version of the loop will be equivalent to the following code:
-
-    \begin{lstlisting}[language=c++,numbers=none]
+The unrolled version of the loop will be equivalent to the following code:
+\begin{lstlisting}[language=c++,numbers=none]
 void toplevel(int* a, int* b) {
 	b[0] = 2 * a[0];
 	b[1] = 2 * a[1];
@@ -759,8 +747,6 @@ void toplevel(int* a, int* b) {
 	b[3] = 2 * a[3];
 }
 \end{lstlisting}
-
-\end{exa}
 
 \begin{remark}
     It might not be possible to unroll a loop.
@@ -776,14 +762,11 @@ void toplevel(int* a, int* b) {
 Loop reordering optimization is an optimization used to improve the performance
 by changing the order in which loops are executed.
 This optimization is not strictly related to FPGA development and
-it involves altering the nesting order of loops in a way that improves data locality and
-cache utilization (for example, on modern CPU), enables usage of SIMD resources.
-
-% TODO: maybe add a simple row major order and column major order array example
+it involves altering the nesting order of loops in a way that improves data locality,
+cache utilization (for example, on modern CPU) and enables usage of SIMD resources.
 
 In the context of FPGA, loop reordering can be used achieve better \texttt{II}
 when we are dealing with pipelining and nested loops (see Section \ref{sec:loop_pipelining} and Section \ref{sec:mm_loop_reordering} for an example).
-
 
 \subsubsection{Function Inlining}
 
@@ -815,8 +798,6 @@ There are 3 different types of partitioning that can be applied to an array (Ref
     \item \textbf{Complete}.
           The array is split intio intividual elements
 \end{enumerate}
-
-
 
 \begin{figure}[h!]
     \centering
@@ -1051,9 +1032,75 @@ needs to be fully partitioned.
 In this work, we will use the pipelined loop \texttt{loop\_j}
 as it provides a good trade-off between latency and resource usage.
 
+\section{Transformer architecture optimizations} \label{sec:transformer_optimizations}
+
+\subsection{Vanilla Transformer}
+
+In this section, we will describe the specific optimizations that can be applied to the Transformer architectures
+and present the HLS synthesis reports for the optimized architecture.
+
+For the purpose of the analysis, we will use the architectures with the
+hyperparameters as described in Section \ref{sec:architecture}.
+The models achieve reasonable performance while still being small enough
+to fit the board.
+
+For all \textbf{matrix multiplications} performed in the architecture, we will use the pipelined loop \texttt{loop\_j}
+as described in Section \ref{sec:loop_pipelining_unrolling} because
+it provides a reasonable performance-resource utilization tradeoff.
+
+We utilize \texttt{float} \textbf{data type} for all the matrices in the architecture.
+We found that using \texttt{double} data type does not affect the accuracy performance
+of the model, while it significantly increases the resource utilization (DSP)
+and makes the model not fit into the board.
+
+We also use the following numerical optimization technique applied to \textbf{softmax}
+to make it numerically stable.
+Notice that
+\begin{align*}
+    \text{softmax}(x_i) & = \frac{e^{x_i}}{\sum_{j=1}^{N} e^{x_j}}                     \\
+                        & = \frac{e^{x_i - \max(x)}}{\sum_{j=1}^{N} e^{x_j - \max(x)}} \\
+                        & = \text{softmax}(x_i - \max(x))
+\end{align*}
+Since $e^x_i$ term can be very large, subtracting the maximum value from all the elements
+bounds the values of $e^x_i$ (the largest element will be 0) so that the
+sum of exponents will never become large.
+
+For the \textbf{ReLU} activation function, we which needs to be applied to
+a 2 dimensional matrix (see Feed Forward layer of the encoder block in Section \ref{sec:encoder_block})
+fully unroll the loops and use the \texttt{complete} partitioning of the matrix.
+
+All the loops in the architecture are automatically pipelined unless
+it is impossible to do so (e.g., because of the dependencies between the iterations).
+
+
+The optimized architecture reaches latency of 3714 cycles (37.14 microseconds) utilizes 5\% BRAM, 30\% FFs and 90\% LUTs.
+\newline
+See full report in \texttt{vitis\_hls/transformer/transformer\_optimized\_csynth.rpt}.
+
+For comparison, the architecture with all optimization turned off
+reaches latency of 34745 cycles (347.45 microseconds, 10 times as many) and utilizes only 2\% BRAM, 2\% FFs and 10\% LUTs.
+\newline
+See full report in \texttt{vitis\_hls/transformer\_slow/transformer\_not\_optimized\_csynth.rpt}.
+
+\subsection{Linear transformer}
+
+
+% \begin{equation}
+%     \begin{array}{rll}
+%         \text{softmax}(x_i) & = \frac{e^{x_i}}{\sum_{j=1}^{N} e^{x_j}}                     \\
+%                             & = \frac{e^{x_i - \max(x)}}{\sum_{j=1}^{N} e^{x_j - \max(x)}}
+%     \end{array}
+% \end{equation}
+% \begin{equation}
+%     \text{softmax}(x_i) &= \frac{e^{x_i}}{\sum_{j=1}^{N} e^{x_j}} \\
+%     &= \frac{e^{x_i - \max(x)}}{\sum_{j=1}^{N} e^{x_j - \max(x)}}
+% \end{equation}
+
+% TODO: describe numerically stable softmax: https://blester125.com/blog/softmax.html
+% also reference the transformer architecture which also mentions it
+
 
 % \texttt{II} Source code can be located in \texttt{vitis_hls}.
-
 
 % this is quite a cool video that goes into the details
 % https://www.youtube.com/watch?v=JeERDmY2qkU
@@ -1074,11 +1121,11 @@ as it provides a good trade-off between latency and resource usage.
 % TODO: transpose matrix A before for vector types (so that can fetch at consecutive address)
 
 
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
 \chapter{Experiments}
 
 
-\section{Architecture and hyperparameters}
+\section{Architecture and hyperparameters} \label{sec:architecture}
 
 % use simple gridsearch + plot evaluation metrics
 

@@ -27,9 +27,7 @@ void transformer(din_t* input_array, dout_t* val) {
 
   din_t xx[SEQ_LEN][INPUT_DIM] = {0};
   for (int i = 0; i < SEQ_LEN; i++) {
-#pragma HLS PIPELINE off
     for (int j = 0; j < INPUT_DIM; j++) {
-#pragma HLS PIPELINE off
       xx[i][j] = input_array[i * INPUT_DIM + j];
     }
   }
