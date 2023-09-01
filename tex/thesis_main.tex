@@ -93,16 +93,38 @@ The work contained in this thesis is my own work unless otherwise stated.
 
 \renewcommand{\abstractname}{Acknowledgements}
 \begin{abstract}
-    This is where you usually thank people who have provided useful assistance, feedback,...., during your project.
+    I would like to thank my supervisor, Dr Paul Bilokon, for his guidance and support throughout the project.
+    He kept me motivated and helped me to stay on track.
+
+    I would like to thank the Department of Mathematics at Imperial College London for providing me with the
+    opportunity to study at the institution.
 \end{abstract}
 
 \newpage
 
 \renewcommand{\abstractname}{Abstract}
 \begin{abstract}
-    The abstract is a short summary of the thesis' contents.
-    It should be about half a page long and be accessible by someone not familiar with the project.
-    The goal of the abstract is also to tease the reader and make him want to read the whole thesis.
+    % The abstract is a short summary of the thesis' contents.
+    % It should be about half a page long and be accessible by someone not familiar with the project.
+    % The goal of the abstract is also to tease the reader and make him want to read the whole thesis.
+
+    In this work, we explore how the inference time of a Transformer Neural Network can be efficiently optimized with applications to real-time anomaly detection in financial time series.
+    The financial time series are price series such as asset prices.
+    Unfortunately, the data is often with errors or outliers that make the downstream data processing tasks useless, unstable or even harmful \cite{Falkenberry_2008} \cite{Vallis_Hochenbaum_Twitter}. Moreover, the amount of financial time-series data has been significantly increasing \cite{AnomalyDataBig}.
+    Hence, there is a need for better data-cleaning methods in terms of accuracy and in terms of processing speed.
+
+    Transformers as a neural network architecture have achieved superior performances in many tasks such as Natural Language Processing and Computer Vision \cite{TransformersNLP}.
+    Time series modelling and especially anomaly detection tasks can benefit from the features of transformers architecture in multiple ways, including the capacity to capture long-range dependencies and interactions \cite{2202.07125}.
+
+    Increasingly powerful hardware, such as field-programmable gate arrays (FPGAs), have seen increasing usage in recent years due to their reconfigurability and high performance \cite{10.1007/978-3-319-56258-2_14}.
+    They can be efficiently utilized to speed up the computations of the Transformer architecture.
+
+    We explore different Transformer architectures for time series modelling and how they can be efficiently implemented on an FPGA board (PYNQ-Z2).
+    In particular, we examine the application of Transformers to detect anomalies
+    in time series and we show how they can be efficiently implemented on an FPGA board
+    to minimize latency.
+
+    The code is available at \url{https://github.com/thxi/icl_thesis}
 \end{abstract}
 
 \tableofcontents
@@ -141,18 +163,49 @@ The work contained in this thesis is my own work unless otherwise stated.
 % In Section~\ref{sec:HowTo}, we shall provide several examples of clearly written examples,
 % whereas Section~\ref{sec:WhatNotToDo} will gather a certain number of common mistakes and errors.
 
-In this thesis, we explore how the inference time of a Transformer Neural Network can be efficiently optimized with applications to real-time anomaly detection in financial time series.
-The financial time series are price series such as asset prices.
-Unfortunately, the data is often with errors or outliers that make the downstream data processing tasks useless, unstable or even harmful \cite{Falkenberry_2008} \cite{Vallis_Hochenbaum_Twitter}. Moreover, the amount of financial time-series data has been significantly increasing \cite{AnomalyDataBig}.
-Hence, there is a need for better data-cleaning methods in terms of accuracy and in terms of processing speed.
+% TODO: maybe add references (but already did in intro...)
 
-Transformers as a neural network architecture have achieved superior performances in many tasks such as Natural Language Processing and Computer Vision \cite{TransformersNLP}.
-Time series modelling and especially anomaly detection tasks can benefit from the features of transformers architecture in multiple ways, including the capacity to capture long-range dependencies and interactions \cite{2202.07125}.
+The rapid growth of financial time series data has given rise to significant
+challenges in maintaining data quality and processing speed. In this study, we address
+these challenges by proposing an implementation of Transformer-based Neural Networks
+which achieve good performance in anomaly detection tasks while having
+a low inference time.
 
-Increasingly powerful hardware, such as field-programmable gate arrays (FPGAs), have seen increasing usage in recent years due to their reconfigurability and high performance \cite{10.1007/978-3-319-56258-2_14}.
+Financial time series data often suffer from data inaccuracies, errors, and
+outliers, rendering downstream data processing tasks ineffective or even detrimental to
+decision-making processes. The urgency of this issue is underscored by the ever-increasing
+volume of financial time-series data available. Consequently, there is a pressing
+demand for more accurate and faster data-cleaning methods.
 
-We explore different Transformer architectures for time series modelling and how they can be efficiently implemented on an FPGA board (PYNQ-Z2).
-In particular, we examine the application of Transformers to detect anomalies in time series and we show how they can be efficiently implemented on an FPGA board to minimize latency or to maximize throughput.
+Transformers, as a powerful neural network architecture, have consistently
+demonstrated exceptional performance across various domains, including Natural Language
+Processing (NLP) and Computer Vision. Leveraging the capabilities of Transformer
+architectures for time series modeling, especially in the realm of anomaly detection, offers
+numerous advantages, including the ability to capture long-range dependencies and
+intricate interactions within the data.
+
+
+The evolution of hardware, for example, the growing utilization of
+field-programmable gate arrays (FPGAs), has brought about increased computational capabilities
+due to their reconfigurability, high performance and deterministic latency. These FPGAs can be
+effectively used to accelerate computations associated with Transformer
+architectures.
+
+
+\section*{Outline of the thesis.}
+
+% TODO
+
+
+\section*{Contributions}
+
+The main contributions of this paper are as follows:
+\begin{enumerate}
+    \item Implementation of vanilla Transformer architecture on an FPGA board.
+    \item Implementation of a Linear Attention Transformer on an FPGA board.
+    \item Analysis of the latency/resource utilization tradeoff for the proposed architectures.
+    \item Comparative analysis of the performance, related to accuracy, of the proposed architectures on the anomaly detection task.
+\end{enumerate}
 
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
@@ -1356,6 +1409,8 @@ the vanilla model.
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 \newpage
 \chapter*{Conclusion}
+
+\section{Summary}
 
 % TODO: go through the work and see if you missed something
 % just a very short draft with ideas for now
