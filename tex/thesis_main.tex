@@ -294,31 +294,21 @@ but to show that it can be efficiently implemented on an FPGA board.
 \end{figure}
 
 
+\chapter{Transformers for anomaly detection}
 
-
-\chapter{Methodology}
-
-In this chapter, we will describe the main concepts and ideas used in this work.
-The reader will be introduced to the main concepts of the Transformer architecture and how it can be used for anomaly detection in time series.
-Finally, the main concepts of programming an FPGA will be introduced and the specific optimizations that can be applied to speed up the computations.
-
-
-
-\section{Transformers}
-
-In this section, we will describe the main concepts of the Transformer architecture.
+In this chapter, we will describe the main concepts and ideas used in the Transformer architecture.
+and how to use them for anomaly detection time series task.
 We will describe the main building blocks of the Transformer architecture
 and will give a special treatment to the attention mechanism firstly introduced in \cite{1409.0473}.
 
+\section{General architecture}
 
-\subsubsection{General architecture}
-
-In \cite{1706.03762}, authors introduced the Transformer architecture which a neural network architecture
+In \cite{1706.03762}, authors introduced the \textit{vanilla} Transformer architecture which a neural network architecture
 which is the architecture that is dominantly used in Natural Language Processing tasks.
 The architecture's main feature was reliance on the attention mechanism and the complete elimination
 of recurrent and convolutional layers.
 
-\begin{figure}[h!]
+\begin{figure}[h]
     \centering
     \includegraphics[scale=0.5]{attention_is_all_you_need.png}
     \caption{Model architecture of the Transformer \cite{1706.03762}}
@@ -326,45 +316,93 @@ of recurrent and convolutional layers.
 \end{figure}
 
 Figure \ref{fig:attention_is_all_you_need} presents the main architecture of the transformer.
-The architecture consists of an \textbf{encoder} and a \textbf{decoder}.
+The architecture consists of an \textbf{encoder} and a \textbf{decoder} blocks.
 For the purpose of the thesis we will only consider the \textbf{encoder} part of the architecture.
 The \textbf{encoder} is preceded by a \textbf{positional encoding} layer which is used to \emph{inject} the positional information
-to the input vectors $x_i$ because the attention mechanism is permutation invariant, this will be explained in Section \ref{sec:attention_mechanism}.
+to the input vectors $x_i$ because the attention mechanism is permutation invariant,
+this will be explained in Section \ref{sec:attention_mechanism}.
 
-% TODO: explain positional encoding and why we need it
-% https://uvadlc-notebooks.readthedocs.io/en/latest/tutorial_notebooks/tutorial6/Transformers_and_MHAttention.html
+\subsection{Positional encoding}
 
-The \textbf{encoder} consists of $N$ identical layers. Each layer has two sub-layers which are a
-\textbf{multi-head self-attention} layer and
-a \textbf{feed-forward} layer.
-The \textbf{feed-forward} layer $\text{FFN}(\cdot)$ is a simple fully-connected layer
-with a non-linear activation function applied element-wise to the
-result\footnote{
-    In general, a \textbf{fully-connected} layer $\text{FC}(x)$ is simply a linear transformation inputs $X$ (i.e., a matrix multiplication) with the activation function applied element-wise to the result.
-    That is, $\text{FC}(x)=f(W\cdot x + b)$ where $W$ is a weight matrix and $b$ is a bias vector and $f(\cdot)$ is the activation function.
-    Authors of \cite{1706.03762} used the ReLU activation function
-}.
+Since the attention mechanism is permutation invariant
+(i.e., it does not take into account the order of the input, refer to Section \ref{sec:attention_mechanism}),
+we need to inject the positional information into the input vectors $x_i$.
+In short, a positional encoding is usually a vector of the same dimension as the input vectors $x_i$
+which can either be fixed (for example, we have the same vector for different positions) or learned.
+
+For the comprehensive overview of different positional encoding techniques, reader
+is referred to \cite{Dufter2021PositionII} and \cite{Weng_2023}.
+
+The vanilla Transformer architecture uses a sinusoidal positional encoding technique
+which is a fixed positional encoding scheme. Suppose we have a time-series of length $T$.
+Then the positional encoding for the $i$-th input vector $x_i$ of dimension $d$ is defined as follows:
+
+\begin{equation}
+    \begin{array}{rll}
+        PE_{i, 2j}   & = \sin(\frac{i}{10000^{2j/d}}) \\
+        PE_{i, 2j+1} & = \cos(\frac{i}{10000^{2j/d}})
+    \end{array}
+\end{equation}
+Refer to Figure \ref{fig:pos_encoding} for an example of the embedding vectors that
+are obtained using this method.
+
+This combination of sine and cosine functions allows the positional encoding to
+generate the embedding of a position in a unique way. The embedding is then
+added to the input vector $x_i$, however, it can also be simply stacked with the input vector $x_i$
+to get a vector of dimension $2d$. In this work, we will use the former approach.
+
+\begin{figure}[h]
+    \centering
+    \includegraphics[width=\textwidth]{etc/pos_encoding.pdf}
+    \caption{Positional encoding example embeddings for a sequence of max length of 100 and embedding dimension of 48.
+        The embeddings are generated using the sinusoidal positional encoding technique.
+        The columns represent the embeddings that we would add to the input vector $x_i$.
+    }
+    \label{fig:pos_encoding}
+\end{figure}
+
+\subsection{Encoder Block}
+
+The encoder consists of $N$ identical layers. Each layer has two sub-layers which are a
+\textbf{multi-head self-attention} layer (described in detail in Section \ref{sec:dot_product_attention})
+and a \textbf{feed-forward (FF)} layer.
+The \textbf{feed-forward (FF)} layer $\text{FFN}(\cdot)$ is a simple neural network
+which comprises of 2 fully-connected ($\text{FC}$) linear layers and an activation function in between them.
 Specifically, authors of \cite{1706.03762} used an $\text{FC}$ layer with
 the ReLU activation function $$\text{ReLU}(x)=\max(0, x)$$
 followed by another $\text{FC}$ layer without activation function, i.e.
 $$\text{FFN}(x)=W_2 \cdot ReLU(W_1\cdot x+b_1)+b_2$$
+where $W_1, W_2, b_1, b_2$ are the weight matrices and bias vectors respectively for the $\text{FC}$ layers.
 
 The \textbf{Add \& Norm} layer is a residual connection \cite{1512.03385} followed by a layer normalization layers \cite{1607.06450}.
-Those layers are not essential for this work and will not be described in detail.
-% TODO: maybe describe them in appendix
+That is,
+$$\text{Add \& Norm}(x)=\text{LayerNorm}(x+\text{Sublayer}(x))$$
+where $\text{Sublayer}(x)$ is either the multi-head self-attention layer or the feed-forward layer (refer to Figure \ref{fig:attention_is_all_you_need}).
+
+Residual connections (i.e., adding the input to the output of the layer),
+also known as skip connections, are commonly used to avoid the vanishing gradient problem \cite{1512.03385}.
+In this case, the residual connection is used to avoid the degradation of the model performance
+when the model is deep (i.e., when the number of sequential layers $N$ is large).
+While we do not use very deep models in this work, we still use residual connections
+as in the original architecture for more stable training (refer to Section \ref{sec:training}).
+Moreover, the residual connection is used to propagate the positional information to the next layers
+as the attention mechanism is permutation invariant (refer to Section \ref{sec:attention_mechanism}).
+
+The layer normalization layer \cite{1607.06450}, $\text{LayerNorm}$ is used to normalize the output of the residual connection.
+The normalization is used to stabilize the training process (however, it is not strictly necessary, refer to Section \ref{sec:training}
+for our empirical findings).
 
 This constitutes the main building block of the Transformer encoder architecture.
 The next section will describe the attention mechanism in detail.
 
-
-\subsection{Attention mechanism} \label{sec:attention_mechanism}
+\section{Attention mechanism} \label{sec:attention_mechanism}
 
 This section will describe the attention mechanism, its variations and the intuition behind it.
 Moreover, we will compare different attention mechanism implementations in terms of
 their computational complexity and their ability to capture long-range dependencies.
 % basically, a survey...
 
-\subsubsection{Dot-Product Attention and Multi-Head Attention}
+\subsection{Dot-Product Attention and Multi-Head Attention} \label{sec:dot_product_attention}
 
 % TODO: cite the common dot-product attention not as a scaled dot product attention
 % https://lilianweng.github.io/posts/2018-06-24-attention/
@@ -416,7 +454,7 @@ Figure \ref{fig:attention_is_all_you_need} visualizes the attention mechanism in
 
 
 
-\subsubsection{Linear attention}
+\subsection{Linear attention}
 
 In \cite{2006.16236}, authors propose an extension to the dot-product attention mechanism called \textbf{linear attention}.
 This significantly reduces the computational complexity of the attention mechanism by eliminating the need to compute the softmax function.
@@ -475,12 +513,17 @@ in the attention layer.
 % lilian weng
 
 
-\subsection{Transformers for time series modelling}
+\section{Transformers for time series modelling}
 
 TODO: provide the main overview of the papers that use transformers for time series modelling,
 the comparison to other methods, the comparison of different transformer architectures specifically
 tailored for time-series
 
+
+\chapter{Methodology}
+
+The reader will be introduced to the main concepts of the Transformer architecture and how it can be used for anomaly detection in time series.
+Finally, the main concepts of programming an FPGA will be introduced and the specific optimizations that can be applied to speed up the computations.
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 \section{FPGA design}
