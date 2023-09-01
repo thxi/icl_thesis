@@ -264,7 +264,8 @@ there exists a common classification of \textit{synthetic} anomalies into differ
 reader is referred to \cite{Steinbuss2020GeneratingAO}, \cite{Schmidl2022AnomalyDI}.
 
 In this work, we will only consider \textbf{Point anomalies} types since
-the main focus of this work is to show the superior performance of the Transformer architecture
+the main focus of this work is not to show the superior performance of the Transformer architecture
+on different types of anomalies
 but to show that it can be efficiently implemented on an FPGA board.
 
 \begin{definition}
@@ -294,14 +295,14 @@ but to show that it can be efficiently implemented on an FPGA board.
 \end{figure}
 
 
-\chapter{Transformers for anomaly detection}
+\chapter{Transformers}
 
 In this chapter, we will describe the main concepts and ideas used in the Transformer architecture.
 and how to use them for anomaly detection time series task.
 We will describe the main building blocks of the Transformer architecture
 and will give a special treatment to the attention mechanism firstly introduced in \cite{1409.0473}.
 
-\section{General architecture}
+\section{General architecture} \label{sec:general_architecture}
 
 In \cite{1706.03762}, authors introduced the \textit{vanilla} Transformer architecture which a neural network architecture
 which is the architecture that is dominantly used in Natural Language Processing tasks.
@@ -317,7 +318,9 @@ of recurrent and convolutional layers.
 
 Figure \ref{fig:attention_is_all_you_need} presents the main architecture of the transformer.
 The architecture consists of an \textbf{encoder} and a \textbf{decoder} blocks.
-For the purpose of the thesis we will only consider the \textbf{encoder} part of the architecture.
+For the purpose of the thesis we will only consider the \textbf{encoder} part of the architecture
+(and in that regard the idea is similar to BERT model for language processing \cite{Devlin2019BERTPO}
+which only uses a transformer encoder and this work which uses BERT for anomaly detection \cite{Jeong2023AnomalyBERTST}).
 The \textbf{encoder} is preceded by a \textbf{positional encoding} layer which is used to \emph{inject} the positional information
 to the input vectors $x_i$ because the attention mechanism is permutation invariant,
 this will be explained in Section \ref{sec:attention_mechanism}.
@@ -399,22 +402,13 @@ The next section will describe the attention mechanism in detail.
 
 This section will describe the attention mechanism, its variations and the intuition behind it.
 Moreover, we will compare different attention mechanism implementations in terms of
-their computational complexity and their ability to capture long-range dependencies.
-% basically, a survey...
+their computational complexity which is important for fast calculations.
+Most importantly, we will describe the \textbf{multi-head attention} mechanism which is used in the vanilla Transformer architecture
+as a continuation of Section \ref{sec:general_architecture}.
 
 \subsection{Dot-Product Attention and Multi-Head Attention} \label{sec:dot_product_attention}
 
-% TODO: cite the common dot-product attention not as a scaled dot product attention
-% https://lilianweng.github.io/posts/2018-06-24-attention/
-
 The attention mechanism introduced in the Transformer architecture \cite{1706.03762} used a \textbf{scaled dot-product attention}.
-
-% TODO: cite similarity to non-local filters
-% Self-attention is a type of attention mechanism where the model
-% makes prediction for one part of a data sample using other parts
-% of the observation about the same sample. Conceptually, it feels quite similar
-% to non-local means. Also note that self-attention is permutation-invariant;
-% in other words, it is an operation on sets.
 
 The main idea of the \textbf{dot-product attention} mechanism is to compute the mapping of a query $q_i$ for each input vector $x_i$ to a set of key-value pairs $(k_j, v_j)$.
 The query $q_i$, key $k_i$ and value $v_i$ vectors are simply linear transformations of the input vectors $x_i$,
@@ -430,8 +424,10 @@ In practice, the attention mechanism is computed for all the queries $q_i$ at th
     \end{array}
 \end{equation}
 \begin{equation}\label{eq:dot_product_attention_matrix}
-    \text{Attention}(Q, K, V)=\text{softmax}(Q K^T) V
+    \text{Attention}(Q, K, V)=\text{softmax}(Q K^T \cdot \frac{1}{\sqrt{d_k}}) V
 \end{equation}
+
+Figure \ref{fig:attention_is_all_you_need} visualizes the attention mechanism introduced in \cite{1706.03762}.
 
 \begin{remark}
     In \cite{1706.03762}, authors additionally scaled the weights $\alpha_i$ by the square root of the dimension of the key vectors $d_k$.
@@ -441,8 +437,17 @@ In practice, the attention mechanism is computed for all the queries $q_i$ at th
 The \textbf{multi-head attention} mechanism is simply a concatenation of multiple attention mechanisms.
 That is, we can compute $h$ different attention mechanisms in parallel and then concatenate the results.
 The main idea behind this is that different attention mechanisms can learn different features of the input vectors.
+After the concatenation, we apply a linear transformation (i.e., a fully-connected layer) to the concatenated vectors to get the final output
+with a desired dimensionality which is usually the same as the input vectors $x_i$.
 
-Figure \ref{fig:attention_is_all_you_need} visualizes the attention mechanism introduced in \cite{1706.03762}.
+However, in the main paper \cite{1706.03762}, authors implemented the multi-head attention mechanism
+in a more efficient way compared to the naive concatenation of multiple attention heads
+of size $d_k$. They, instead, linearly transformed the input vectors
+to the dimension of $d_k\/h$ where $h$ is the number of attention heads and applied
+the attention mechanism to the transformed vectors. This is more efficient because
+we require less parameters and can benefit from the increased accuracy of having
+multiple attention heads.
+
 
 \begin{figure}[h!]
     \centering
@@ -450,8 +455,6 @@ Figure \ref{fig:attention_is_all_you_need} visualizes the attention mechanism in
     \caption{Scaled Dot-Product Attention and Multi-Head Attention \cite{1706.03762}}
     \label{fig:scaled_dot_product_attention}
 \end{figure}
-
-
 
 
 \subsection{Linear attention}
@@ -466,8 +469,6 @@ The equation \ref{eq:dot_product_attention_matrix} for output value $v'_i$ can t
     v'_i=\text{Attention}(Q, K, V)_i=\frac{\sum_j \text{sim}(q_i, k_j) v_j}{\sum_j \text{sim}(q_i, k_j)}
 \end{equation}
 
-% TODO: maybe explain the kernel trick...
-% https://en.wikipedia.org/wiki/Kernel_method
 The only constrained imposed on the similarity function $\text{sim}(\cdot, \cdot)$ is that it should be non-negative for it to define an attention function.
 This conveniently includes all kernels. That is $\text{sim}(q_i, k_j)=\phi(q_i)^T \phi(k_j)$ where $\phi(\cdot)$ is a feature map.
 
@@ -486,7 +487,6 @@ Regrouping the terms, we get the following expression for the attention mechanis
     \text{Attention}(Q, K, V)=\phi(Q)^T \frac{\phi(K) V}{\phi(Q)^T \phi(K)}
 \end{equation}
 
-% TODO: maybe rewrite with an example so that it is even more evident for the reader?...
 which makes it evident that we can compute $\sum_j \phi(k_j) v_j$ once and reuse them for all the queries $q_i$
 which reduces the computational complexity from $O(N^2)$ to $O(N)$ where $N$ is the number of input vectors
 in the attention layer.
@@ -499,26 +499,24 @@ in the attention layer.
     to ensure the differentiability when x is negative.
 \end{remark}
 
-
-% TODO: compare to other competitors for attention layer
-% https://uvadlc-notebooks.readthedocs.io/en/latest/tutorial_notebooks/tutorial6/Transformers_and_MHAttention.html
-% convolutional, etc.
-
-
-% TODO: different architectures from lilian weng blog, retformer, the TF in TS survey.
-% describe different attention mechanisms
-% https://uvadlc-notebooks.readthedocs.io/en/latest/tutorial_notebooks/tutorial6/Transformers_and_MHAttention.html
-% http://nlp.seas.harvard.edu/annotated-transformer/
-% https://peterbloem.nl/blog/transformers
-% lilian weng
-
-
 \section{Transformers for time series modelling}
 
-TODO: provide the main overview of the papers that use transformers for time series modelling,
-the comparison to other methods, the comparison of different transformer architectures specifically
-tailored for time-series
+Originally, the Transformer architecture was introduced for Natural Language Processing tasks \cite{1706.03762}
+but has since found applications in other domains and time-sereis modelling specifically \cite{2202.07125}.
+The motivation behind using the Transformer architecture for time series modelling is that
+they show good performance in many sequence modelling tasks. While many
+specialized Transformer architectures were proposed for time series modelling
+(e.g., \cite{tuli2022tranad}, \cite{2205.13504}) and specifically deployed in
+asset management setting \cite{Lezmi2023TimeSF},
+in the current work, we will use the least tuned architecture, i.e., the vanilla Transformer architecture
+and the architecture with linear attention \cite{2006.16236}. The reason for
+using the not so specialized architectures is that we want to show that the Transformer
+can achieve good out of the box performance on the anomaly detection task with minimal
+tuning and that it can be efficiently implemented on an FPGA board.
 
+\section{Why Transformers for FPGA}
+
+% maybe not needed here and can just add to the bottom
 
 \chapter{Methodology}
 
