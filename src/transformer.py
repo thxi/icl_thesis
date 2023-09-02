@@ -427,11 +427,11 @@ class LinearAttention(nn.Module):
         k_sum_unsqueezed = k_sum.unsqueeze(2)  # [Batch, Dims, 1]
 
         # compute the normalizer Z
-        qq = q.transpose(2, 1)
+        qq = q.transpose(2, 1)  # [Batch, Dims, SeqLen]
         z = 1 / (torch.matmul(qq, k_sum_unsqueezed) + self.eps)  # [Batch, SeqLen, 1]
 
         # compute the new values V
-        numerator = torch.matmul(q, kv)
+        numerator = torch.matmul(q, kv)  # [Batch, SeqLen, Dims]
         v = numerator * z  # [Batch, SeqLen, Dims]
 
         # TODO: maybe use V.continuous
