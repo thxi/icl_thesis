@@ -119,6 +119,8 @@ transpose_value_mat:
 
   // calculate kv
   dout_t kv_mat[SEQ_LEN][SEQ_LEN] = {0};
+  // need to manually partition key_mat
+#pragma HLS ARRAY_PARTITION variable = key_mat complete dim = 2
   kernel_mmult<dout_t, SEQ_LEN, BLOCK_INPUT_DIM, SEQ_LEN>(
       key_mat, value_mat_transposed, kv_mat);
 
@@ -131,10 +133,10 @@ transpose_value_mat:
   dout_t sum_k[SEQ_LEN][1] = {0};
 sum_k:
   for (int j = 0; j < SEQ_LEN; j++) {
-#pragma HLS PIPELINE off
+    // #pragma HLS PIPELINE off
   sum_k_inner:
     for (int i = 0; i < SEQ_LEN; i++) {
-#pragma HLS PIPELINE off
+      // #pragma HLS PIPELINE off
       sum_k[j][0] += key_mat[i][j];
     }
   }
@@ -174,6 +176,7 @@ normalizer_inverse:
 
   // numerator
   dout_t numerator[SEQ_LEN][BLOCK_INPUT_DIM] = {0};
+#pragma HLS ARRAY_PARTITION variable = query_mat complete dim = 2
   kernel_mmult<dout_t, SEQ_LEN, SEQ_LEN, BLOCK_INPUT_DIM>(query_mat, kv_mat,
                                                           numerator);
 

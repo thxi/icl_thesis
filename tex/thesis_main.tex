@@ -457,7 +457,7 @@ multiple attention heads.
 \end{figure}
 
 
-\subsection{Linear attention}
+\subsection{Linear attention} \label{sec:linear_attention}
 
 In \cite{2006.16236}, authors propose an extension to the dot-product attention mechanism called \textbf{linear attention}.
 This significantly reduces the computational complexity of the attention mechanism by eliminating the need to compute the softmax function.
@@ -1034,7 +1034,12 @@ as it provides a good trade-off between latency and resource usage.
 
 \section{Transformer architecture optimizations} \label{sec:transformer_optimizations}
 
-\subsection{Vanilla Transformer}
+In this section, we present the specific optimizations that were applied to the Transformer architecture.
+For HLS code (i.e., implementation), see \texttt{vitis\_hls} directory.
+The comparison of the performance and resource utilization of the FPGA optimized architecture
+and the CPU implementation is presented in Section \ref{sec:performance}.
+
+\subsection{Vanilla Transformer} \label{sec:fpga_vanilla_transformer}
 
 In this section, we will describe the specific optimizations that can be applied to the Transformer architectures
 and present the HLS synthesis reports for the optimized architecture.
@@ -1075,52 +1080,34 @@ it is impossible to do so (e.g., because of the dependencies between the iterati
 
 The optimized architecture reaches latency of 3714 cycles (37.14 microseconds) utilizes 5\% BRAM, 30\% FFs and 90\% LUTs.
 \newline
-See full report in \texttt{vitis\_hls/transformer/transformer\_optimized\_csynth.rpt}.
+See full report in \texttt{vitis\_hls/transformer/csynth.rpt}.
 
 For comparison, the architecture with all optimization turned off
 reaches latency of 34745 cycles (347.45 microseconds, 10 times as many) and utilizes only 2\% BRAM, 2\% FFs and 10\% LUTs.
 \newline
-See full report in \texttt{vitis\_hls/transformer\_slow/transformer\_not\_optimized\_csynth.rpt}.
+See full report in \texttt{vitis\_hls/transformer\_slow/csynth.rpt}.
 
 \subsection{Linear transformer}
 
+We also implement the linear transformer architecture (i.e., linear attention)
+as described in Section \ref{sec:linear_attention}
+on the board.
 
-% \begin{equation}
-%     \begin{array}{rll}
-%         \text{softmax}(x_i) & = \frac{e^{x_i}}{\sum_{j=1}^{N} e^{x_j}}                     \\
-%                             & = \frac{e^{x_i - \max(x)}}{\sum_{j=1}^{N} e^{x_j - \max(x)}}
-%     \end{array}
-% \end{equation}
-% \begin{equation}
-%     \text{softmax}(x_i) &= \frac{e^{x_i}}{\sum_{j=1}^{N} e^{x_j}} \\
-%     &= \frac{e^{x_i - \max(x)}}{\sum_{j=1}^{N} e^{x_j - \max(x)}}
-% \end{equation}
+Similarly to the vanilla transformer implementation (described in Section \ref{sec:fpga_vanilla_transformer}),
+we also utilize \texttt{float} data type for all the matrices in the architecture,
+use \texttt{loop\_j} pipelining for matrices, fully unroll the loops for ReLU activation function.
 
-% TODO: describe numerically stable softmax: https://blester125.com/blog/softmax.html
-% also reference the transformer architecture which also mentions it
+\begin{remark}
+    As an implementation detail, the matrices had to be manually partitioned
+    with the usage of \texttt{pragma HLS ARRAY\_PARTITION} directive because
+    Vitis HLS could not infer the partitioning automatically.
+\end{remark}
 
+The optimized version achieves 2986 cycles (29.86 microseconds) latency and utilizes 18\% BRAM, 43\% FFs and 100\% LUTs
+\newline
+The full report is in \texttt{vitis\_hls/linear\_transformer/csynth.rpt}.
 
-% \texttt{II} Source code can be located in \texttt{vitis_hls}.
-
-% this is quite a cool video that goes into the details
-% https://www.youtube.com/watch?v=JeERDmY2qkU
-
-% biggest problem: partitioning the B array if pipeline the outer loop
-% good choice - j loop because you combine the pipeline + partition
-% + loop unrolling (implied)
-
-% then: more efficient partitioning (or reshaping) trick
-
-
-% TODO: performance metric
-
-% maybe add as further steps blocked matrix mult
-% but don't need to do it here because it fits into memory
-% anyway
-% maybe also add vector types hls::vector<DTYPE, DSIZE>
-% TODO: transpose matrix A before for vector types (so that can fetch at consecutive address)
-
-
+For comparison, the architecture with all optimization turned off reaches latency of 68894 cycles (688.94 microseconds) and utilizes 17\% BRAM, 6\% FFs and 24\% LUTs.
 
 \chapter{Experiments}
 

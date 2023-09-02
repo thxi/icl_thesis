@@ -1,0 +1,431 @@
+
+
+================================================================
+== Synthesis Summary Report of 'transformer'
+================================================================
++ General Information: 
+    * Date:           Sat Sep  2 14:20:16 2023
+    * Version:        2022.1 (Build 3526262 on Mon Apr 18 15:47:01 MDT 2022)
+    * Project:        linear_transformer_slow
+    * Solution:       solution1 (Vivado IP Flow Target)
+    * Product family: zynq
+    * Target device:  xc7z020-clg400-1
+    
+
++ Performance & Resource Estimates: 
+    
+    PS: '+' for module; 'o' for loop; '*' for dataflow
+    +---------------------------------------------------------+--------+-------+---------+-----------+----------+---------+------+----------+---------+---------+-----------+-------------+-----+
+    |                         Modules                         |  Issue |       | Latency |  Latency  | Iteration|         | Trip |          |         |         |           |             |     |
+    |                         & Loops                         |  Type  | Slack | (cycles)|    (ns)   |  Latency | Interval| Count| Pipelined|  BRAM   |   DSP   |     FF    |     LUT     | URAM|
+    +---------------------------------------------------------+--------+-------+---------+-----------+----------+---------+------+----------+---------+---------+-----------+-------------+-----+
+    |+ transformer                                            |  Timing|  -1.12|    68884|  6.888e+05|         -|    68885|     -|        no|  17 (6%)|  20 (9%)|  6752 (6%)|  12858 (24%)|    -|
+    | + transformer_Pipeline_1                                |       -|   3.61|       18|    180.000|         -|       18|     -|        no|        -|        -|    7 (~0%)|     50 (~0%)|    -|
+    |  o Loop 1                                               |       -|   7.30|       16|    160.000|         1|        1|    16|       yes|        -|        -|          -|            -|    -|
+    | + transformer_Pipeline_VITIS_LOOP_31_1_VITIS_LOOP_32_2  |       -|   0.00|       19|    190.000|         -|       19|     -|        no|        -|        -|   49 (~0%)|    142 (~0%)|    -|
+    |  o VITIS_LOOP_31_1_VITIS_LOOP_32_2                      |       -|   7.30|       17|    170.000|         3|        1|    16|       yes|        -|        -|          -|            -|    -|
+    | + transformer_for_sample                                |  Timing|  -1.12|    68830|  6.883e+05|         -|    68830|     -|        no|  17 (6%)|  20 (9%)|  5591 (5%)|  10796 (20%)|    -|
+    |  + transformer_for_sample_Pipeline_1                    |       -|   2.56|       66|    660.000|         -|       66|     -|        no|        -|        -|    9 (~0%)|     52 (~0%)|    -|
+    |   o Loop 1                                              |       -|   7.30|       64|    640.000|         1|        1|    64|       yes|        -|        -|          -|            -|    -|
+    |  + transformer_for_sample_Pipeline_2                    |       -|   3.49|       66|    660.000|         -|       66|     -|        no|        -|        -|    9 (~0%)|     52 (~0%)|    -|
+    |   o Loop 1                                              |       -|   7.30|       64|    640.000|         1|        1|    64|       yes|        -|        -|          -|            -|    -|
+    |  + transformer_for_sample_Pipeline_3                    |       -|   2.56|       66|    660.000|         -|       66|     -|        no|        -|        -|    9 (~0%)|     52 (~0%)|    -|
+    |   o Loop 1                                              |       -|   7.30|       64|    640.000|         1|        1|    64|       yes|        -|        -|          -|            -|    -|
+    |  + transformer_for_sample_Pipeline_4                    |       -|   2.56|       66|    660.000|         -|       66|     -|        no|        -|        -|    9 (~0%)|     52 (~0%)|    -|
+    |   o Loop 1                                              |       -|   7.30|       64|    640.000|         1|        1|    64|       yes|        -|        -|          -|            -|    -|
+    |  + kernel_mmult_float_8_8_8_1                           |       -|   0.04|     5841|  5.841e+04|         -|     5841|     -|        no|  1 (~0%)|        -|  198 (~0%)|    195 (~0%)|    -|
+    |   o loop_i                                              |       -|   7.30|     5840|  5.840e+04|       730|        -|     8|        no|        -|        -|          -|            -|    -|
+    |    o loop_j                                             |       -|   7.30|      728|  7.280e+03|        91|        -|     8|        no|        -|        -|          -|            -|    -|
+    |     o loop_k                                            |       -|   7.30|       88|    880.000|        11|        -|     8|        no|        -|        -|          -|            -|    -|
+    |  + kernel_mmult_float_8_8_8_s                           |       -|   0.04|     5777|  5.777e+04|         -|     5777|     -|        no|        -|   5 (2%)|  527 (~0%)|     920 (1%)|    -|
+    |   o loop_i                                              |       -|   7.30|     5776|  5.776e+04|       722|        -|     8|        no|        -|        -|          -|            -|    -|
+    |    o loop_j                                             |       -|   7.30|      720|  7.200e+03|        90|        -|     8|        no|        -|        -|          -|            -|    -|
+    |     o loop_k                                            |       -|   7.30|       88|    880.000|        11|        -|     8|        no|        -|        -|          -|            -|    -|
+    |  + transformer_for_sample_Pipeline_5                    |       -|   2.56|       66|    660.000|         -|       66|     -|        no|        -|        -|    9 (~0%)|     52 (~0%)|    -|
+    |   o Loop 1                                              |       -|   7.30|       64|    640.000|         1|        1|    64|       yes|        -|        -|          -|            -|    -|
+    |  + transformer_for_sample_Pipeline_6                    |       -|   2.56|       66|    660.000|         -|       66|     -|        no|        -|        -|    9 (~0%)|     52 (~0%)|    -|
+    |   o Loop 1                                              |       -|   7.30|       64|    640.000|         1|        1|    64|       yes|        -|        -|          -|            -|    -|
+    |  + transformer_for_sample_Pipeline_7                    |       -|   3.68|       10|    100.000|         -|       10|     -|        no|        -|        -|    6 (~0%)|     49 (~0%)|    -|
+    |   o Loop 1                                              |       -|   7.30|        8|     80.000|         1|        1|     8|       yes|        -|        -|          -|            -|    -|
+    |  + transformer_for_sample_Pipeline_8                    |       -|   2.56|       66|    660.000|         -|       66|     -|        no|        -|        -|    9 (~0%)|     52 (~0%)|    -|
+    |   o Loop 1                                              |       -|   7.30|       64|    640.000|         1|        1|    64|       yes|        -|        -|          -|            -|    -|
+    |  + transformer_for_sample_Pipeline_9                    |       -|   3.68|       10|    100.000|         -|       10|     -|        no|        -|        -|    6 (~0%)|     49 (~0%)|    -|
+    |   o Loop 1                                              |       -|   7.30|        8|     80.000|         1|        1|     8|       yes|        -|        -|          -|            -|    -|
+    |  + transformer_for_sample_Pipeline_10                   |       -|   2.56|       66|    660.000|         -|       66|     -|        no|        -|        -|    9 (~0%)|     52 (~0%)|    -|
+    |   o Loop 1                                              |       -|   7.30|       64|    640.000|         1|        1|    64|       yes|        -|        -|          -|            -|    -|
+    |  + transformer_for_sample_Pipeline_11                   |       -|   2.56|       66|    660.000|         -|       66|     -|        no|        -|        -|    9 (~0%)|     52 (~0%)|    -|
+    |   o Loop 1                                              |       -|   7.30|       64|    640.000|         1|        1|    64|       yes|        -|        -|          -|            -|    -|
+    |  + kernel_mmult_float_8_8_8_2                           |       -|   0.04|     5785|  5.785e+04|         -|     5785|     -|        no|        -|        -|  436 (~0%)|    237 (~0%)|    -|
+    |   o loop_i                                              |       -|   7.30|     5784|  5.784e+04|       723|        -|     8|        no|        -|        -|          -|            -|    -|
+    |    o loop_j                                             |       -|   7.30|      720|  7.200e+03|        90|        -|     8|        no|        -|        -|          -|            -|    -|
+    |     o loop_k                                            |       -|   7.30|       88|    880.000|        11|        -|     8|        no|        -|        -|          -|            -|    -|
+    |  + transformer_for_sample_Pipeline_12                   |       -|   2.56|       66|    660.000|         -|       66|     -|        no|        -|        -|    9 (~0%)|     52 (~0%)|    -|
+    |   o Loop 1                                              |       -|   7.30|       64|    640.000|         1|        1|    64|       yes|        -|        -|          -|            -|    -|
+    |  + transformer_for_sample_Pipeline_13                   |       -|   2.50|      130|  1.300e+03|         -|      130|     -|        no|        -|        -|   10 (~0%)|     53 (~0%)|    -|
+    |   o Loop 1                                              |       -|   7.30|      128|  1.280e+03|         1|        1|   128|       yes|        -|        -|          -|            -|    -|
+    |  + transformer_for_sample_Pipeline_14                   |       -|   2.56|       66|    660.000|         -|       66|     -|        no|        -|        -|    9 (~0%)|     52 (~0%)|    -|
+    |   o Loop 1                                              |       -|   7.30|       64|    640.000|         1|        1|    64|       yes|        -|        -|          -|            -|    -|
+    |  + transformer_for_sample_Pipeline_15                   |       -|   3.68|       10|    100.000|         -|       10|     -|        no|        -|        -|    6 (~0%)|     49 (~0%)|    -|
+    |   o Loop 1                                              |       -|   7.30|        8|     80.000|         1|        1|     8|       yes|        -|        -|          -|            -|    -|
+    |  o loop_i                                               |       -|   7.30|     1552|  1.552e+04|       194|        -|     8|        no|        -|        -|          -|            -|    -|
+    |   o loop_j                                              |       -|   7.30|      192|  1.920e+03|        24|        -|     8|        no|        -|        -|          -|            -|    -|
+    |    o loop_k                                             |       -|   7.30|       22|    220.000|        11|        -|     2|        no|        -|        -|          -|            -|    -|
+    |  o VITIS_LOOP_80_1                                      |       -|   7.30|      528|  5.280e+03|        66|        -|     8|        no|        -|        -|          -|            -|    -|
+    |   o VITIS_LOOP_72_1                                     |       -|   7.30|       64|    640.000|         8|        -|     8|        no|        -|        -|          -|            -|    -|
+    |  o elu_inplace_loop_i                                   |       -|   7.30|     1112|  1.112e+04|       139|        -|     8|        no|        -|        -|          -|            -|    -|
+    |   o elu_inplace_loop_j                                  |       -|   7.30|      136|  1.360e+03|        17|        -|     8|        no|        -|        -|          -|            -|    -|
+    |  o elu_inplace_loop_i                                   |       -|   7.30|     1232|  1.232e+04|       154|        -|     8|        no|        -|        -|          -|            -|    -|
+    |   o elu_inplace_loop_j                                  |       -|   7.30|      152|  1.520e+03|        19|        -|     8|        no|        -|        -|          -|            -|    -|
+    |  o transpose_value_mat                                  |       -|   7.30|      144|  1.440e+03|        18|        -|     8|        no|        -|        -|          -|            -|    -|
+    |   o VITIS_LOOP_111_1                                    |       -|   7.30|       16|    160.000|         2|        -|     8|        no|        -|        -|          -|            -|    -|
+    |  o sum_k                                                |       -|   7.30|      472|  4.720e+03|        59|        -|     8|        no|        -|        -|          -|            -|    -|
+    |   o sum_k_inner                                         |       -|   7.30|       56|    560.000|         7|        -|     8|        no|        -|        -|          -|            -|    -|
+    |  o transpose_query_mat                                  |       -|   7.30|       88|    880.000|        11|        -|     8|        no|        -|        -|          -|            -|    -|
+    |   o VITIS_LOOP_155_2                                    |       -|   7.30|        8|     80.000|         1|        -|     8|        no|        -|        -|          -|            -|    -|
+    |  o loop_i                                               |       -|   7.30|      720|  7.200e+03|        90|        -|     8|        no|        -|        -|          -|            -|    -|
+    |   o loop_k                                              |       -|   7.30|       88|    880.000|        11|        -|     8|        no|        -|        -|          -|            -|    -|
+    |  o normalizer_inverse                                   |       -|   7.30|      576|  5.760e+03|        72|        -|     8|        no|        -|        -|          -|            -|    -|
+    |  o hadamart_loop_i                                      |       -|   7.30|      472|  4.720e+03|        59|        -|     8|        no|        -|        -|          -|            -|    -|
+    |   o hadamart_loop_j                                     |       -|   7.30|       56|    560.000|         7|        -|     8|        no|        -|        -|          -|            -|    -|
+    |  o VITIS_LOOP_80_1                                      |       -|   7.30|      528|  5.280e+03|        66|        -|     8|        no|        -|        -|          -|            -|    -|
+    |   o VITIS_LOOP_72_1                                     |       -|   7.30|       64|    640.000|         8|        -|     8|        no|        -|        -|          -|            -|    -|
+    |  o loop_i                                               |       -|   7.30|    11536|  1.154e+05|      1442|        -|     8|        no|        -|        -|          -|            -|    -|
+    |   o loop_j                                              |       -|   7.30|     1440|  1.440e+04|        90|        -|    16|        no|        -|        -|          -|            -|    -|
+    |    o loop_k                                             |       -|   7.30|       88|    880.000|        11|        -|     8|        no|        -|        -|          -|            -|    -|
+    |  o VITIS_LOOP_80_1                                      |       -|   7.30|     1040|  1.040e+04|       130|        -|     8|        no|        -|        -|          -|            -|    -|
+    |   o VITIS_LOOP_72_1                                     |       -|   7.30|      128|  1.280e+03|         8|        -|    16|        no|        -|        -|          -|            -|    -|
+    |  o relu_inplace_loop_i                                  |       -|   7.30|      656|  6.560e+03|        82|        -|     8|        no|        -|        -|          -|            -|    -|
+    |   o relu_inplace_loop_j                                 |       -|   7.30|       80|    800.000|         5|        -|    16|        no|        -|        -|          -|            -|    -|
+    |  o loop_i                                               |       -|   7.30|    11408|  1.141e+05|      1426|        -|     8|        no|        -|        -|          -|            -|    -|
+    |   o loop_j                                              |       -|   7.30|     1424|  1.424e+04|       178|        -|     8|        no|        -|        -|          -|            -|    -|
+    |    o loop_k                                             |       -|   7.30|      176|  1.760e+03|        11|        -|    16|        no|        -|        -|          -|            -|    -|
+    |  o VITIS_LOOP_80_1                                      |       -|   7.30|      528|  5.280e+03|        66|        -|     8|        no|        -|        -|          -|            -|    -|
+    |   o VITIS_LOOP_72_1                                     |       -|   7.30|       64|    640.000|         8|        -|     8|        no|        -|        -|          -|            -|    -|
+    |  o loop_i                                               |       -|   7.30|      720|  7.200e+03|        90|        -|     8|        no|        -|        -|          -|            -|    -|
+    |   o loop_k                                              |       -|   7.30|       88|    880.000|        11|        -|     8|        no|        -|        -|          -|            -|    -|
+    |  o VITIS_LOOP_80_1                                      |       -|   7.30|       64|    640.000|         8|        -|     8|        no|        -|        -|          -|            -|    -|
+    +---------------------------------------------------------+--------+-------+---------+-----------+----------+---------+------+----------+---------+---------+-----------+-------------+-----+
+
+
+================================================================
+== HW Interfaces
+================================================================
+* M_AXI
++-----------------+------------+---------------+---------+--------+----------+-----------+--------------+--------------+-------------+-------------+
+| Interface       | Data Width | Address Width | Latency | Offset | Register | Max Widen | Max Read     | Max Write    | Num Read    | Num Write   |
+|                 | (SW->HW)   |               |         |        |          | Bitwidth  | Burst Length | Burst Length | Outstanding | Outstanding |
++-----------------+------------+---------------+---------+--------+----------+-----------+--------------+--------------+-------------+-------------+
+| m_axi_axi_ports | 32 -> 32   | 64            | 0       | slave  | 0        | 0         | 16           | 16           | 16          | 16          |
++-----------------+------------+---------------+---------+--------+----------+-----------+--------------+--------------+-------------+-------------+
+
+* S_AXILITE Interfaces
++---------------+------------+---------------+--------+----------+
+| Interface     | Data Width | Address Width | Offset | Register |
++---------------+------------+---------------+--------+----------+
+| s_axi_control | 32         | 6             | 16     | 0        |
++---------------+------------+---------------+--------+----------+
+
+* S_AXILITE Registers
++---------------+---------------+--------+-------+--------+----------------------------------+----------------------------------------------------------------------+
+| Interface     | Register      | Offset | Width | Access | Description                      | Bit Fields                                                           |
++---------------+---------------+--------+-------+--------+----------------------------------+----------------------------------------------------------------------+
+| s_axi_control | CTRL          | 0x00   | 32    | RW     | Control signals                  | 0=AP_START 1=AP_DONE 2=AP_IDLE 3=AP_READY 7=AUTO_RESTART 9=INTERRUPT |
+| s_axi_control | GIER          | 0x04   | 32    | RW     | Global Interrupt Enable Register | 0=Enable                                                             |
+| s_axi_control | IP_IER        | 0x08   | 32    | RW     | IP Interrupt Enable Register     | 0=CHAN0_INT_EN 1=CHAN1_INT_EN                                        |
+| s_axi_control | IP_ISR        | 0x0c   | 32    | RW     | IP Interrupt Status Register     | 0=CHAN0_INT_ST 1=CHAN1_INT_ST                                        |
+| s_axi_control | input_array_1 | 0x10   | 32    | W      | Data signal of input_array       |                                                                      |
+| s_axi_control | input_array_2 | 0x14   | 32    | W      | Data signal of input_array       |                                                                      |
+| s_axi_control | val_r_1       | 0x1c   | 32    | W      | Data signal of val_r             |                                                                      |
+| s_axi_control | val_r_2       | 0x20   | 32    | W      | Data signal of val_r             |                                                                      |
++---------------+---------------+--------+-------+--------+----------------------------------+----------------------------------------------------------------------+
+
+* TOP LEVEL CONTROL
++-----------+------------+-----------+
+| Interface | Type       | Ports     |
++-----------+------------+-----------+
+| ap_clk    | clock      | ap_clk    |
+| ap_rst_n  | reset      | ap_rst_n  |
+| interrupt | interrupt  | interrupt |
+| ap_ctrl   | ap_ctrl_hs |           |
++-----------+------------+-----------+
+
+
+================================================================
+== SW I/O Information
+================================================================
+* Top Function Arguments
++-------------+-----------+----------+
+| Argument    | Direction | Datatype |
++-------------+-----------+----------+
+| input_array | inout     | float*   |
+| val         | inout     | float*   |
++-------------+-----------+----------+
+
+* SW-to-HW Mapping
++-------------+-----------------+-----------+----------+-----------------------------------------+
+| Argument    | HW Interface    | HW Type   | HW Usage | HW Info                                 |
++-------------+-----------------+-----------+----------+-----------------------------------------+
+| input_array | m_axi_axi_ports | interface |          |                                         |
+| input_array | s_axi_control   | register  | offset   | name=input_array_1 offset=0x10 range=32 |
+| input_array | s_axi_control   | register  | offset   | name=input_array_2 offset=0x14 range=32 |
+| val         | m_axi_axi_ports | interface |          |                                         |
+| val         | s_axi_control   | interface | offset   |                                         |
++-------------+-----------------+-----------+----------+-----------------------------------------+
+
+
+================================================================
+== M_AXI Burst Information
+================================================================
+ Note: All burst requests might be further partitioned into multiple requests during RTL generation based on max_read_burst_length or max_write_burst_length settings.
+
+* Inferred Burst Summary
++-----------------+-----------------+-----------+--------+-------+------------------------------------------------------------------------------+
+| HW Interface    | Loop            | Direction | Length | Width | Location                                                                     |
++-----------------+-----------------+-----------+--------+-------+------------------------------------------------------------------------------+
+| m_axi_axi_ports | VITIS_LOOP_31_1 | read      | 16     | 32    | ../icl_thesis/vitis_hls/linear_transformer_slow/linear_transformer.cpp:31:20 |
++-----------------+-----------------+-----------+--------+-------+------------------------------------------------------------------------------+
+
+* Inferred Bursts and Widening Missed
++-----------------+-------------+-----------------+---------------------------------------------------------------------------------------------------------+------------+------------------------------------------------------------------------------+
+| HW Interface    | Variable    | Loop            | Problem                                                                                                 | Resolution | Location                                                                     |
++-----------------+-------------+-----------------+---------------------------------------------------------------------------------------------------------+------------+------------------------------------------------------------------------------+
+| m_axi_axi_ports | input_array | VITIS_LOOP_32_2 | Could not widen since type float size is greater than or equal to the max_widen_bitwidth threshold of 0 | 214-353    | ../icl_thesis/vitis_hls/linear_transformer_slow/linear_transformer.cpp:32:22 |
++-----------------+-------------+-----------------+---------------------------------------------------------------------------------------------------------+------------+------------------------------------------------------------------------------+
+
+    * Resolution URL: www.xilinx.com/cgi-bin/docs/rdoc?v=2022.1;t=hls+guidance;d=XXX-YYY.html (replace XXX-YYY with column value)
+
+================================================================
+== Bind Op Report
+================================================================
++---------------------------------------------------------+-----+--------+-------------+------+---------+---------+
+| Name                                                    | DSP | Pragma | Variable    | Op   | Impl    | Latency |
++---------------------------------------------------------+-----+--------+-------------+------+---------+---------+
+| + transformer                                           | 20  |        |             |      |         |         |
+|  + transformer_Pipeline_1                               | 0   |        |             |      |         |         |
+|    empty_118_fu_58_p2                                   | -   |        | empty_118   | add  | fabric  | 0       |
+|  + transformer_Pipeline_VITIS_LOOP_31_1_VITIS_LOOP_32_2 | 0   |        |             |      |         |         |
+|    add_ln31_1_fu_126_p2                                 | -   |        | add_ln31_1  | add  | fabric  | 0       |
+|    add_ln31_fu_149_p2                                   | -   |        | add_ln31    | add  | fabric  | 0       |
+|    add_ln33_fu_187_p2                                   | -   |        | add_ln33    | add  | fabric  | 0       |
+|    add_ln32_fu_202_p2                                   | -   |        | add_ln32    | add  | fabric  | 0       |
+|  + transformer_for_sample                               | 20  |        |             |      |         |         |
+|    add_ln52_fu_1536_p2                                  | -   |        | add_ln52    | add  | fabric  | 0       |
+|    add_ln63_fu_1551_p2                                  | -   |        | add_ln63    | add  | fabric  | 0       |
+|    add_ln55_fu_1567_p2                                  | -   |        | add_ln55    | add  | fabric  | 0       |
+|    fmul_32ns_32ns_32_4_max_dsp_1_U59                    | -   |        | add_ln61    | add  | fabric  | 0       |
+|    add_ln61_1_fu_1604_p2                                | -   |        | add_ln61_1  | add  | fabric  | 0       |
+|    add_ln59_fu_1620_p2                                  | -   |        | add_ln59    | add  | fabric  | 0       |
+|    fmul_32ns_32ns_32_4_max_dsp_1_U59                    | 3   |        | mul_i       | fmul | maxdsp  | 3       |
+|    fadd_32ns_32ns_32_5_full_dsp_1_U58                   | 2   |        | sum_1       | fadd | fulldsp | 4       |
+|    add_ln80_fu_1647_p2                                  | -   |        | add_ln80    | add  | fabric  | 0       |
+|    add_ln74_fu_1667_p2                                  | -   |        | add_ln74    | add  | fabric  | 0       |
+|    add_ln72_fu_1683_p2                                  | -   |        | add_ln72    | add  | fabric  | 0       |
+|    fadd_32ns_32ns_32_5_full_dsp_1_U58                   | 2   |        | add_i_i     | fadd | fulldsp | 4       |
+|    add_ln90_fu_1714_p2                                  | -   |        | add_ln90    | add  | fabric  | 0       |
+|    add_ln93_1_fu_1731_p2                                | -   |        | add_ln93_1  | add  | fabric  | 0       |
+|    fexp_32ns_32ns_32_10_full_dsp_1_U63                  | 7   |        | tmp         | fexp | fulldsp | 9       |
+|    fadd_32ns_32ns_32_5_full_dsp_1_U58                   | 2   |        | sub_i       | fadd | fulldsp | 4       |
+|    add_ln90_1_fu_2008_p2                                | -   |        | add_ln90_1  | add  | fabric  | 0       |
+|    add_ln95_fu_2023_p2                                  | -   |        | add_ln95    | add  | fabric  | 0       |
+|    add_ln93_fu_2039_p2                                  | -   |        | add_ln93    | add  | fabric  | 0       |
+|    fexp_32ns_32ns_32_10_full_dsp_1_U63                  | 7   |        | tmp_1       | fexp | fulldsp | 9       |
+|    fadd_32ns_32ns_32_5_full_dsp_1_U58                   | 2   |        | sub_i1      | fadd | fulldsp | 4       |
+|    add_ln109_fu_2116_p2                                 | -   |        | add_ln109   | add  | fabric  | 0       |
+|    add_ln113_fu_2135_p2                                 | -   |        | add_ln113   | add  | fabric  | 0       |
+|    add_ln113_1_fu_2153_p2                               | -   |        | add_ln113_1 | add  | fabric  | 0       |
+|    add_ln111_fu_2169_p2                                 | -   |        | add_ln111   | add  | fabric  | 0       |
+|    add_ln136_fu_2197_p2                                 | -   |        | add_ln136   | add  | fabric  | 0       |
+|    add_ln141_fu_2220_p2                                 | -   |        | add_ln141   | add  | fabric  | 0       |
+|    add_ln139_fu_2236_p2                                 | -   |        | add_ln139   | add  | fabric  | 0       |
+|    fadd_32ns_32ns_32_5_full_dsp_1_U58                   | 2   |        | add         | fadd | fulldsp | 4       |
+|    add_ln153_fu_2271_p2                                 | -   |        | add_ln153   | add  | fabric  | 0       |
+|    add_ln157_fu_2294_p2                                 | -   |        | add_ln157   | add  | fabric  | 0       |
+|    add_ln155_fu_2310_p2                                 | -   |        | add_ln155   | add  | fabric  | 0       |
+|    add_ln52_1_fu_2368_p2                                | -   |        | add_ln52_1  | add  | fabric  | 0       |
+|    add_ln61_2_fu_2388_p2                                | -   |        | add_ln61_2  | add  | fabric  | 0       |
+|    add_ln59_1_fu_2404_p2                                | -   |        | add_ln59_1  | add  | fabric  | 0       |
+|    fmul_32ns_32ns_32_4_max_dsp_1_U59                    | 3   |        | mul_i1      | fmul | maxdsp  | 3       |
+|    fadd_32ns_32ns_32_5_full_dsp_1_U58                   | 2   |        | sum_3       | fadd | fulldsp | 4       |
+|    add_ln169_fu_2428_p2                                 | -   |        | add_ln169   | add  | fabric  | 0       |
+|    dadd_64ns_64ns_64_7_full_dsp_1_U64                   | 3   |        | add1        | dadd | fulldsp | 6       |
+|    ddiv_64ns_64ns_64_59_no_dsp_1_U65                    | -   |        | div         | ddiv | fabric  | 58      |
+|    add_ln195_fu_2470_p2                                 | -   |        | add_ln195   | add  | fabric  | 0       |
+|    add_ln200_fu_2485_p2                                 | -   |        | add_ln200   | add  | fabric  | 0       |
+|    add_ln198_fu_2502_p2                                 | -   |        | add_ln198   | add  | fabric  | 0       |
+|    fmul_32ns_32ns_32_4_max_dsp_1_U59                    | 3   |        | mul         | fmul | maxdsp  | 3       |
+|    add_ln80_1_fu_2533_p2                                | -   |        | add_ln80_1  | add  | fabric  | 0       |
+|    add_ln74_1_fu_2553_p2                                | -   |        | add_ln74_1  | add  | fabric  | 0       |
+|    add_ln72_1_fu_2569_p2                                | -   |        | add_ln72_1  | add  | fabric  | 0       |
+|    fadd_32ns_32ns_32_5_full_dsp_1_U58                   | 2   |        | add_i_i1    | fadd | fulldsp | 4       |
+|    add_ln52_2_fu_2608_p2                                | -   |        | add_ln52_2  | add  | fabric  | 0       |
+|    add_ln63_1_fu_2623_p2                                | -   |        | add_ln63_1  | add  | fabric  | 0       |
+|    add_ln55_1_fu_2639_p2                                | -   |        | add_ln55_1  | add  | fabric  | 0       |
+|    add_ln61_3_fu_2665_p2                                | -   |        | add_ln61_3  | add  | fabric  | 0       |
+|    add_ln61_4_fu_2675_p2                                | -   |        | add_ln61_4  | add  | fabric  | 0       |
+|    add_ln59_2_fu_2691_p2                                | -   |        | add_ln59_2  | add  | fabric  | 0       |
+|    fmul_32ns_32ns_32_4_max_dsp_1_U59                    | 3   |        | mul_i2      | fmul | maxdsp  | 3       |
+|    fadd_32ns_32ns_32_5_full_dsp_1_U58                   | 2   |        | sum_5       | fadd | fulldsp | 4       |
+|    add_ln80_2_fu_2718_p2                                | -   |        | add_ln80_2  | add  | fabric  | 0       |
+|    add_ln74_2_fu_2738_p2                                | -   |        | add_ln74_2  | add  | fabric  | 0       |
+|    add_ln72_2_fu_2754_p2                                | -   |        | add_ln72_2  | add  | fabric  | 0       |
+|    fadd_32ns_32ns_32_5_full_dsp_1_U58                   | 2   |        | add_i_i2    | fadd | fulldsp | 4       |
+|    add_ln106_fu_2785_p2                                 | -   |        | add_ln106   | add  | fabric  | 0       |
+|    add_ln112_fu_2800_p2                                 | -   |        | add_ln112   | add  | fabric  | 0       |
+|    add_ln110_fu_2816_p2                                 | -   |        | add_ln110   | add  | fabric  | 0       |
+|    add_ln52_3_fu_2895_p2                                | -   |        | add_ln52_3  | add  | fabric  | 0       |
+|    add_ln63_2_fu_2914_p2                                | -   |        | add_ln63_2  | add  | fabric  | 0       |
+|    add_ln55_2_fu_2930_p2                                | -   |        | add_ln55_2  | add  | fabric  | 0       |
+|    add_ln61_5_fu_2956_p2                                | -   |        | add_ln61_5  | add  | fabric  | 0       |
+|    add_ln61_6_fu_2966_p2                                | -   |        | add_ln61_6  | add  | fabric  | 0       |
+|    add_ln59_3_fu_2982_p2                                | -   |        | add_ln59_3  | add  | fabric  | 0       |
+|    fmul_32ns_32ns_32_4_max_dsp_1_U59                    | 3   |        | mul_i3      | fmul | maxdsp  | 3       |
+|    fadd_32ns_32ns_32_5_full_dsp_1_U58                   | 2   |        | sum_7       | fadd | fulldsp | 4       |
+|    add_ln80_3_fu_3009_p2                                | -   |        | add_ln80_3  | add  | fabric  | 0       |
+|    add_ln74_3_fu_3029_p2                                | -   |        | add_ln74_3  | add  | fabric  | 0       |
+|    add_ln72_3_fu_3045_p2                                | -   |        | add_ln72_3  | add  | fabric  | 0       |
+|    fadd_32ns_32ns_32_5_full_dsp_1_U58                   | 2   |        | add_i_i3    | fadd | fulldsp | 4       |
+|    add_ln52_4_fu_3080_p2                                | -   |        | add_ln52_4  | add  | fabric  | 0       |
+|    add_ln61_7_fu_3100_p2                                | -   |        | add_ln61_7  | add  | fabric  | 0       |
+|    add_ln59_4_fu_3116_p2                                | -   |        | add_ln59_4  | add  | fabric  | 0       |
+|    fmul_32ns_32ns_32_4_max_dsp_1_U59                    | 3   |        | mul_i4      | fmul | maxdsp  | 3       |
+|    fadd_32ns_32ns_32_5_full_dsp_1_U58                   | 2   |        | sum_9       | fadd | fulldsp | 4       |
+|    add_ln80_4_fu_3140_p2                                | -   |        | add_ln80_4  | add  | fabric  | 0       |
+|    fadd_32ns_32ns_32_5_full_dsp_1_U58                   | 2   |        | add_i_i4    | fadd | fulldsp | 4       |
+|   + transformer_for_sample_Pipeline_1                   | 0   |        |             |      |         |         |
+|     empty_78_fu_58_p2                                   | -   |        | empty_78    | add  | fabric  | 0       |
+|   + transformer_for_sample_Pipeline_2                   | 0   |        |             |      |         |         |
+|     empty_58_fu_190_p2                                  | -   |        | empty_58    | add  | fabric  | 0       |
+|   + transformer_for_sample_Pipeline_3                   | 0   |        |             |      |         |         |
+|     empty_55_fu_58_p2                                   | -   |        | empty_55    | add  | fabric  | 0       |
+|   + transformer_for_sample_Pipeline_4                   | 0   |        |             |      |         |         |
+|     empty_52_fu_58_p2                                   | -   |        | empty_52    | add  | fabric  | 0       |
+|   + kernel_mmult_float_8_8_8_1                          | 0   |        |             |      |         |         |
+|     add_ln52_fu_276_p2                                  | -   |        | add_ln52    | add  | fabric  | 0       |
+|     add_ln55_fu_292_p2                                  | -   |        | add_ln55    | add  | fabric  | 0       |
+|     add_ln61_fu_318_p2                                  | -   |        | add_ln61    | add  | fabric  | 0       |
+|     add_ln61_8_fu_328_p2                                | -   |        | add_ln61_8  | add  | fabric  | 0       |
+|     add_ln59_fu_344_p2                                  | -   |        | add_ln59    | add  | fabric  | 0       |
+|   + kernel_mmult_float_8_8_8_s                          | 5   |        |             |      |         |         |
+|     add_ln52_fu_146_p2                                  | -   |        | add_ln52    | add  | fabric  | 0       |
+|     add_ln63_fu_156_p2                                  | -   |        | add_ln63    | add  | fabric  | 0       |
+|     add_ln55_fu_172_p2                                  | -   |        | add_ln55    | add  | fabric  | 0       |
+|     add_ln61_fu_190_p2                                  | -   |        | add_ln61    | add  | fabric  | 0       |
+|     add_ln61_9_fu_208_p2                                | -   |        | add_ln61_9  | add  | fabric  | 0       |
+|     add_ln59_fu_224_p2                                  | -   |        | add_ln59    | add  | fabric  | 0       |
+|     fmul_32ns_32ns_32_4_max_dsp_1_U29                   | 3   |        | mul         | fmul | maxdsp  | 3       |
+|     fadd_32ns_32ns_32_5_full_dsp_1_U28                  | 2   |        | sum         | fadd | fulldsp | 4       |
+|   + transformer_for_sample_Pipeline_5                   | 0   |        |             |      |         |         |
+|     empty_49_fu_58_p2                                   | -   |        | empty_49    | add  | fabric  | 0       |
+|   + transformer_for_sample_Pipeline_6                   | 0   |        |             |      |         |         |
+|     empty_46_fu_58_p2                                   | -   |        | empty_46    | add  | fabric  | 0       |
+|   + transformer_for_sample_Pipeline_7                   | 0   |        |             |      |         |         |
+|     empty_44_fu_59_p2                                   | -   |        | empty_44    | add  | fabric  | 0       |
+|   + transformer_for_sample_Pipeline_8                   | 0   |        |             |      |         |         |
+|     empty_41_fu_58_p2                                   | -   |        | empty_41    | add  | fabric  | 0       |
+|   + transformer_for_sample_Pipeline_9                   | 0   |        |             |      |         |         |
+|     empty_39_fu_59_p2                                   | -   |        | empty_39    | add  | fabric  | 0       |
+|   + transformer_for_sample_Pipeline_10                  | 0   |        |             |      |         |         |
+|     empty_75_fu_58_p2                                   | -   |        | empty_75    | add  | fabric  | 0       |
+|   + transformer_for_sample_Pipeline_11                  | 0   |        |             |      |         |         |
+|     empty_72_fu_58_p2                                   | -   |        | empty_72    | add  | fabric  | 0       |
+|   + kernel_mmult_float_8_8_8_2                          | 0   |        |             |      |         |         |
+|     add_ln52_fu_265_p2                                  | -   |        | add_ln52    | add  | fabric  | 0       |
+|     add_ln63_fu_275_p2                                  | -   |        | add_ln63    | add  | fabric  | 0       |
+|     add_ln55_fu_291_p2                                  | -   |        | add_ln55    | add  | fabric  | 0       |
+|     add_ln61_fu_313_p2                                  | -   |        | add_ln61    | add  | fabric  | 0       |
+|     add_ln59_fu_329_p2                                  | -   |        | add_ln59    | add  | fabric  | 0       |
+|   + transformer_for_sample_Pipeline_12                  | 0   |        |             |      |         |         |
+|     empty_69_fu_58_p2                                   | -   |        | empty_69    | add  | fabric  | 0       |
+|   + transformer_for_sample_Pipeline_13                  | 0   |        |             |      |         |         |
+|     empty_66_fu_58_p2                                   | -   |        | empty_66    | add  | fabric  | 0       |
+|   + transformer_for_sample_Pipeline_14                  | 0   |        |             |      |         |         |
+|     empty_63_fu_58_p2                                   | -   |        | empty_63    | add  | fabric  | 0       |
+|   + transformer_for_sample_Pipeline_15                  | 0   |        |             |      |         |         |
+|     empty_61_fu_59_p2                                   | -   |        | empty_61    | add  | fabric  | 0       |
++---------------------------------------------------------+-----+--------+-------------+------+---------+---------+
+
+
+================================================================
+== Bind Storage Report
+================================================================
++---------------------------------------------------------------+------+------+--------+---------------------------------------------------------+---------+------+---------+
+| Name                                                          | BRAM | URAM | Pragma | Variable                                                | Storage | Impl | Latency |
++---------------------------------------------------------------+------+------+--------+---------------------------------------------------------+---------+------+---------+
+| + transformer                                                 | 17   | 0    |        |                                                         |         |      |         |
+|   xx_U                                                        | -    | -    |        | xx                                                      | ram_1p  | auto | 1       |
+|  + transformer_for_sample                                     | 17   | 0    |        |                                                         |         |      |         |
+|    front_linear_output_U                                      | 1    | -    |        | front_linear_output                                     | ram_1p  | auto | 1       |
+|    query_mat_U                                                | -    | -    |        | query_mat                                               | ram_1p  | auto | 1       |
+|    query_mat_1_U                                              | -    | -    |        | query_mat_1                                             | ram_1p  | auto | 1       |
+|    query_mat_2_U                                              | -    | -    |        | query_mat_2                                             | ram_1p  | auto | 1       |
+|    query_mat_3_U                                              | -    | -    |        | query_mat_3                                             | ram_1p  | auto | 1       |
+|    query_mat_4_U                                              | -    | -    |        | query_mat_4                                             | ram_1p  | auto | 1       |
+|    query_mat_5_U                                              | -    | -    |        | query_mat_5                                             | ram_1p  | auto | 1       |
+|    query_mat_6_U                                              | -    | -    |        | query_mat_6                                             | ram_1p  | auto | 1       |
+|    query_mat_7_U                                              | -    | -    |        | query_mat_7                                             | ram_1p  | auto | 1       |
+|    key_mat_U                                                  | 1    | -    |        | key_mat                                                 | ram_1p  | auto | 1       |
+|    value_mat_U                                                | 1    | -    |        | value_mat                                               | ram_1p  | auto | 1       |
+|    value_mat_transposed_U                                     | 1    | -    |        | value_mat_transposed                                    | ram_1p  | auto | 1       |
+|    kv_mat_U                                                   | 2    | -    |        | kv_mat                                                  | ram_1p  | auto | 1       |
+|    sum_k_0_U                                                  | -    | -    |        | sum_k_0                                                 | ram_1p  | auto | 1       |
+|    query_mat_transposed_U                                     | 1    | -    |        | query_mat_transposed                                    | ram_1p  | auto | 1       |
+|    normalizer_0_U                                             | -    | -    |        | normalizer_0                                            | ram_1p  | auto | 1       |
+|    numerator_U                                                | 1    | -    |        | numerator                                               | ram_1p  | auto | 1       |
+|    values_new_U                                               | 1    | -    |        | values_new                                              | ram_1p  | auto | 1       |
+|    o_proj_U                                                   | 1    | -    |        | o_proj                                                  | ram_1p  | auto | 1       |
+|    first_linear_net_output_U                                  | 1    | -    |        | first_linear_net_output                                 | ram_1p  | auto | 1       |
+|    second_linear_net_output_U                                 | 1    | -    |        | second_linear_net_output                                | ram_1p  | auto | 1       |
+|    final_layer_output_0_U                                     | -    | -    |        | final_layer_output_0                                    | ram_1p  | auto | 1       |
+|    FRONT_LINEAR_WEIGHT_U                                      | -    | -    |        | FRONT_LINEAR_WEIGHT                                     | rom_1p  | auto | 1       |
+|    TRANSFORMER_ENCODER_LAYERS_0_SELF_ATTN_KEY_MAT_WEIGHT_U    | 1    | -    |        | TRANSFORMER_ENCODER_LAYERS_0_SELF_ATTN_KEY_MAT_WEIGHT   | ram_1p  | auto | 1       |
+|    TRANSFORMER_ENCODER_LAYERS_0_SELF_ATTN_VALUE_MAT_WEIGHT_U  | 1    | -    |        | TRANSFORMER_ENCODER_LAYERS_0_SELF_ATTN_VALUE_MAT_WEIGHT | ram_1p  | auto | 1       |
+|    FRONT_LINEAR_BIAS_U                                        | -    | -    |        | FRONT_LINEAR_BIAS                                       | rom_1p  | auto | 1       |
+|    TRANSFORMER_ENCODER_LAYERS_0_SELF_ATTN_O_PROJ_WEIGHT_U     | 1    | -    |        | TRANSFORMER_ENCODER_LAYERS_0_SELF_ATTN_O_PROJ_WEIGHT    | ram_1p  | auto | 1       |
+|    TRANSFORMER_ENCODER_LAYERS_0_SELF_ATTN_O_PROJ_BIAS_U       | -    | -    |        | TRANSFORMER_ENCODER_LAYERS_0_SELF_ATTN_O_PROJ_BIAS      | rom_1p  | auto | 1       |
+|    TRANSFORMER_ENCODER_LAYERS_0_LINEAR_NET_0_WEIGHT_U         | 1    | -    |        | TRANSFORMER_ENCODER_LAYERS_0_LINEAR_NET_0_WEIGHT        | rom_1p  | auto | 1       |
+|    TRANSFORMER_ENCODER_LAYERS_0_LINEAR_NET_0_BIAS_U           | -    | -    |        | TRANSFORMER_ENCODER_LAYERS_0_LINEAR_NET_0_BIAS          | rom_1p  | auto | 1       |
+|    TRANSFORMER_ENCODER_LAYERS_0_LINEAR_NET_3_WEIGHT_U         | 1    | -    |        | TRANSFORMER_ENCODER_LAYERS_0_LINEAR_NET_3_WEIGHT        | rom_1p  | auto | 1       |
+|    TRANSFORMER_ENCODER_LAYERS_0_LINEAR_NET_3_BIAS_U           | -    | -    |        | TRANSFORMER_ENCODER_LAYERS_0_LINEAR_NET_3_BIAS          | rom_1p  | auto | 1       |
+|    FINAL_LINEAR_WEIGHT_0_U                                    | -    | -    |        | FINAL_LINEAR_WEIGHT_0                                   | rom_1p  | auto | 1       |
+|   + kernel_mmult_float_8_8_8_1                                | 1    | 0    |        |                                                         |         |      |         |
+|     TRANSFORMER_ENCODER_LAYERS_0_SELF_ATTN_QUERY_MAT_WEIGHT_U | 1    | -    |        | TRANSFORMER_ENCODER_LAYERS_0_SELF_ATTN_QUERY_MAT_WEIGHT | rom_1p  | auto | 1       |
++---------------------------------------------------------------+------+------+--------+---------------------------------------------------------+---------+------+---------+
+
+
+================================================================
+== Pragma Report
+================================================================
+* Valid Pragma Syntax
++-----------------+-----------------------------------------------------------------------+------------------------------------------------------------------------------------------------------+
+| Type            | Options                                                               | Location                                                                                             |
++-----------------+-----------------------------------------------------------------------+------------------------------------------------------------------------------------------------------+
+| interface       | m_axi port = input_array depth = 16 offset = slave bundle = axi_ports | ../icl_thesis/vitis_hls/linear_transformer_slow/linear_transformer.cpp:24 in transformer             |
+| interface       | m_axi port = val depth = 1 offset = slave bundle = axi_ports          | ../icl_thesis/vitis_hls/linear_transformer_slow/linear_transformer.cpp:26 in transformer             |
+| interface       | s_axilite port = return                                               | ../icl_thesis/vitis_hls/linear_transformer_slow/linear_transformer.cpp:28 in transformer             |
+| pipeline        | off                                                                   | ../icl_thesis/vitis_hls/linear_transformer_slow/linear_transformer.cpp:110 in transformer_for_sample |
+| pipeline        | off                                                                   | ../icl_thesis/vitis_hls/linear_transformer_slow/linear_transformer.cpp:112 in transformer_for_sample |
+| pipeline        | off                                                                   | ../icl_thesis/vitis_hls/linear_transformer_slow/linear_transformer.cpp:137 in transformer_for_sample |
+| pipeline        | off                                                                   | ../icl_thesis/vitis_hls/linear_transformer_slow/linear_transformer.cpp:140 in transformer_for_sample |
+| pipeline        | off                                                                   | ../icl_thesis/vitis_hls/linear_transformer_slow/linear_transformer.cpp:154 in transformer_for_sample |
+| pipeline        | off                                                                   | ../icl_thesis/vitis_hls/linear_transformer_slow/linear_transformer.cpp:156 in transformer_for_sample |
+| pipeline        | off                                                                   | ../icl_thesis/vitis_hls/linear_transformer_slow/linear_transformer.cpp:170 in transformer_for_sample |
+| array_partition | variable = query_mat complete dim = 2                                 | ../icl_thesis/vitis_hls/linear_transformer_slow/linear_transformer.cpp:181 in transformer_for_sample |
+| pipeline        | off                                                                   | ../icl_thesis/vitis_hls/linear_transformer_slow/linear_transformer.cpp:196 in transformer_for_sample |
+| pipeline        | off                                                                   | ../icl_thesis/vitis_hls/linear_transformer_slow/linear_transformer.cpp:199 in transformer_for_sample |
+| pipeline        | off                                                                   | ../icl_thesis/vitis_hls/linear_transformer_slow/linear_transformer.h:53 in kernel_mmult              |
+| pipeline        | off                                                                   | ../icl_thesis/vitis_hls/linear_transformer_slow/linear_transformer.h:56 in kernel_mmult              |
+| pipeline        | off                                                                   | ../icl_thesis/vitis_hls/linear_transformer_slow/linear_transformer.h:60 in kernel_mmult              |
+| pipeline        | off                                                                   | ../icl_thesis/vitis_hls/linear_transformer_slow/linear_transformer.h:73 in add_bias_to_row           |
+| pipeline        | off                                                                   | ../icl_thesis/vitis_hls/linear_transformer_slow/linear_transformer.h:81 in kernel_bias_add           |
+| pipeline        | off                                                                   | ../icl_thesis/vitis_hls/linear_transformer_slow/linear_transformer.h:91 in elu_inplace               |
+| pipeline        | off                                                                   | ../icl_thesis/vitis_hls/linear_transformer_slow/linear_transformer.h:94 in elu_inplace               |
+| pipeline        | off                                                                   | ../icl_thesis/vitis_hls/linear_transformer_slow/linear_transformer.h:107 in relu_inplace             |
+| pipeline        | off                                                                   | ../icl_thesis/vitis_hls/linear_transformer_slow/linear_transformer.h:111 in relu_inplace             |
+| pipeline        | off                                                                   | ../icl_thesis/vitis_hls/linear_transformer_slow/linear_transformer.h:125 in transpose_3d             |
+| pipeline        | off                                                                   | ../icl_thesis/vitis_hls/linear_transformer_slow/linear_transformer.h:128 in transpose_3d             |
+| pipeline        | off                                                                   | ../icl_thesis/vitis_hls/linear_transformer_slow/linear_transformer.h:131 in transpose_3d             |
+| pipeline        | off                                                                   | ../icl_thesis/vitis_hls/linear_transformer_slow/linear_transformer.h:143 in transpose                |
+| pipeline        | off                                                                   | ../icl_thesis/vitis_hls/linear_transformer_slow/linear_transformer.h:145 in transpose                |
++-----------------+-----------------------------------------------------------------------+------------------------------------------------------------------------------------------------------+
+
+

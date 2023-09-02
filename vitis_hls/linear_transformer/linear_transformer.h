@@ -46,8 +46,8 @@ void print_mat_3d(T mat[T1][T2][T3]) {
 
 template <typename T, int M, int N, int K>
 void kernel_mmult(const T a[M][N], const T b[N][K], T out[M][K]) {
-#pragma HLS ARRAY_PARTITION variable = a complete dim = 2
-#pragma HLS ARRAY_PARTITION variable = b complete dim = 1
+// #pragma HLS ARRAY_PARTITION variable = a complete dim = 2
+// #pragma HLS ARRAY_PARTITION variable = b complete dim = 1
 loop_i:
   for (int i = 0; i < M; ++i) {
 #pragma HLS PIPELINE off
@@ -57,7 +57,6 @@ loop_i:
       T sum = 0;
     loop_k:
       for (int k = 0; k < N; ++k) {
-#pragma HLS PIPELINE
         sum += a[i][k] * b[k][j];
       }
       out[i][j] = sum;
@@ -101,7 +100,7 @@ template <typename T, int T1, int T2>
 void relu_inplace(T A[T1][T2]) {
 relu_inplace_loop_i:
   for (int i = 0; i < T1; i++) {
-#pragma HLS UNROLL
+    // #pragma HLS UNROLL
   relu_inplace_loop_j:
     for (int j = 0; j < T2; j++) {
 #pragma HLS UNROLL
