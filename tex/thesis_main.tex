@@ -1108,13 +1108,15 @@ The optimized version achieves 2986 cycles (29.86 microseconds) latency and util
 The full report is in \texttt{vitis\_hls/linear\_transformer/csynth.rpt}.
 
 For comparison, the architecture with all optimization turned off reaches latency of 68894 cycles (688.94 microseconds) and utilizes 17\% BRAM, 6\% FFs and 24\% LUTs.
+The full report is in \texttt{vitis\_hls/linear\_transformer\_slow/csynth.rpt}.
 
 \chapter{Experiments}
 
+In this section, we will describe the experiments that were performed to evaluate the performance of the proposed architecture.
+While the main focus of this work is the inference performance of the models (refer to Section \ref{sec:performance}),
+we will also describe the training procedure and the accuracy performance of the models.
 
 \section{Architecture and hyperparameters} \label{sec:architecture}
-
-% use simple gridsearch + plot evaluation metrics
 
 Here we will describe the model architecture and the hyperparameters used for the experiments.
 
@@ -1124,6 +1126,9 @@ In the experiments 3 models were used for comparison:
     \item \textbf{Transformer Encoder} - a transformer encoder model on raw time series data
     \item \textbf{Linear Transformer Encoder} - a linear transformer model on raw time series data
 \end{itemize}
+
+The reason for using the linear regression model is to provide a baseline for the performance of the transformer models
+to show that even simple untuned models can outperform the linear regression model.
 
 For both transformer models, we used the encoder architectures as described in Section \ref{sec:attention_mechanism}
 with a linear layer on top of the output of the transformer encoder to get the final prediction (i.e., if a sample is an anomaly).
@@ -1135,7 +1140,6 @@ with a linear layer on top of the output of the transformer encoder to get the f
 
 The transformer hyperparameters used for the experiments are presented in Table \ref{tab:hyperparameters}.
 
-% TODO: this might change in the future if I find a better architecture
 \begin{table}[h!]
     \centering
     \begin{tabular}{|c|c|c|c|c|}
@@ -1223,8 +1227,8 @@ An example of the loss function diverging is presented in Figure \ref{fig:gradie
 
 \begin{figure}[h!]
     \centering
-    \includegraphics[scale=0.6]{gradient_explosion.png}
-    \caption{Example of gradient explosion at around epoch 115 which leads to the loss function diverging for a few following epochs.}
+    \includegraphics[width=\textwidth]{etc/gradient_explosion.pdf}
+    \caption{Example of gradient explosion at around epoch 40 which leads to the loss function diverging for a few following epochs.}
     \label{fig:gradient_explosion}
 \end{figure}
 
