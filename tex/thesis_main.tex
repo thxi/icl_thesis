@@ -1325,6 +1325,15 @@ we found that they lead to unstable training and worse performance of the model 
 of the datasets. Hence, we disabled them for the experiments and replaced them with
 identity layers.
 
+\subsubsection{Data Preprocessing}
+
+Although, this is not a part of the training procedure, before fitting
+a neural network, it is usually a good idea to preprocess the data by scaling it.
+
+For the experiments, we used the \textbf{MinMaxScaler} from the \texttt{scikit-learn} library \cite{scikit-learn},
+to scale the input features to the range of $[0, 1]$ for a more stable training.
+
+
 \section{Datasets} \label{sec:datasets}
 
 In this section, the datasets used for model training and performance evaluation will be described.
@@ -1395,12 +1404,13 @@ The algorithm can be summarized as follows:
 \end{enumerate}
 
 Authors model $\delta$ as a uniformly distributed random variable $\mathcal{U}[0, \rho]$.
-We instead use the normal distribution with matching mean and standard deviation of the returns time series.
+We instead use the uniform distribution $\mathcal{U}[-\rho, \rho]$ (i.e., just increase the range)
+to allow for positive and negative outliers.
 
 An example of the injected outliers is presented in Figure \ref{fig:FI2010_example_outliers_injected}
 \begin{figure}[h!]
     \centering
-    \includegraphics[scale=0.48]{FI2010_example_outliers_injected.png}
+    \includegraphics[width=\textwidth]{FI2010_example_outliers_injected.png}
     \caption{Example of the injected outliers in the FI2010 dataset.}
     \label{fig:FI2010_example_outliers_injected}
 \end{figure}
@@ -1521,8 +1531,9 @@ In this paper, we will use the following metrics to compare the performance of t
 % or this: https://thesis.unipd.it/retrieve/840738c1-c175-4529-b5e5-795b393a36a2/Baron_Alex.pdf
 % I will mostly try to follow the above papers for reporting (e.g., summary tables, plots)
 
-% TODO: maybe highlight the best model in bold in the tables
-% TODO: maybe reorder dataset and model columns
+% run main_accuracy.py to reproduce
+% to get the table, run notebooks
+% get_metrics_table-Copy1.ipynb and get_metrics_table_for_fi2010.ipynb
 \begin{table}[h!]
     \centering
     \begin{tabular}{|c|c|c|c|c|c|}
@@ -1531,12 +1542,15 @@ In this paper, we will use the following metrics to compare the performance of t
         \hline
         Linear Regression  & KPI     & 0.61/0.66 & 0.07/0.15 & 0.73/0.69 & 0.12/0.25 \\
                            & NAB     & 0.09/0.20 & 0.09/0.20 & 1.00/1.00 & 0.16/0.33 \\
+                           & FI2010 & 0.14/0.16 & 0.14/0.16 & 1.00/1.00 & 0.24/0.27 \\
         \hline
         Transformer        & KPI     & 0.98/0.97 & 0.89/0.95 & 0.59/0.63 & 0.71/0.76 \\
                            & NAB     & 0.76/0.75 & 0.16/0.41 & 0.39/0.55 & 0.23/0.47 \\
+                           & FI2010 & 0.84/0.80 & 0.17/0.21 & 0.03/0.11 & 0.06/0.14\\
         \hline
         Linear Transformer & KPI     & 0.97/0.95 & 0.58/0.73 & 0.62/0.69 & 0.60/0.71 \\
                            & NAB     & 0.53/0.56 & 0.13/0.27 & 0.76/0.71 & 0.22/0.40 \\
+                           & FI2010 & 0.82/0.77 & 0.15/0.14 & 0.06/0.09 & 0.09/0.11 \\
         \hline
     \end{tabular}
     \caption{Final metrics. The reported value are for the train and validation set.}

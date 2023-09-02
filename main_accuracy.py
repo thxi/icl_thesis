@@ -40,7 +40,17 @@ override_dicts = {
         "epochs": 300,
         "gradient_clip_val": 0.01,
         "max_lr": 0.1,
-    }
+    },
+    ("Transformer", "FI2010"): {
+        "epochs": 101,
+        "gradient_clip_val": 0.01,
+        "max_lr": 0.01,
+    },
+    ("LinearTransformer", "FI2010"): {
+        "epochs": 271,
+        # "gradient_clip_val": 0.01,
+        # "max_lr": 0.01,
+    },
 }
 
 
@@ -168,6 +178,7 @@ def main(model_name, dataset_name, plots_root_dir=Path("tex/Figures/plots"), roo
     mt = trainer.callbacks[1]
     res = get_metrics_from_tracker(mt)
     if plots_root_dir is not None:
+        logger.info(f"Plotting metrics to {plots_root_dir}")
         plot_metrics_from_tracker(
             res, dataset_name=dataset_name, filename=plots_root_dir / f"{model_name}_{dataset_name}.png"
         )
