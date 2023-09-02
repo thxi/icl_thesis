@@ -1158,12 +1158,14 @@ The transformer hyperparameters used for the experiments are presented in Table 
 
 The learning rate was chosen using the learning rate finder \cite{1506.01186} (see Section \ref{sec:learning_rate_finder})
 and the batch size was chosen to be the maximum value that
-fitted the dataset in memory ($2^{13}$ samples).
+fitted the dataset in memory ($2^{13}$ samples),
+we also used \textbf{Adam} optimizer \cite{Kingma2014AdamAM} (see Section \ref{sec:optimizer}).
 
 
 \subsection{Model Fitting} \label{sec:training}
 
-In this section, we will describe the training procedure and the main issues that we encountered and how they were addressed.
+In this section, we will describe the training procedure,
+the main tools used and issues that we encountered and how they were addressed.
 
 \subsubsection{General procedure}
 
@@ -1181,10 +1183,57 @@ where $\alpha$ is the learning rate and $\mathcal{L}(\theta_t)$ is the loss func
 While the general procedure is simple there are multiple methods to improve the convergence of the optimization algorithm,
 which will be described in the following sections.
 
-% TODO: maybe add a section with an optimizer here?
+\subsubsection{Optimizer} \label{sec:optimizer}
+
+The optimizer is the algorithm that is used to update the parameters of the model.
+The general procedure of updating the parameters as described in Equation \ref{eq:gradient_descent},
+can be improved by using more sophisticated optimization algorithms.
+
+The \textbf{Adam} optimizer is a popular optimization algorithm used in training artificial neural networks
+and is a reasonable baseline choice for many problems.
+It stands for "Adaptive Moment Estimation" and combines ideas from two other
+optimization techniques: RMSprop (Root Mean Square Propagation) and Momentum.
+The Adam optimizer is known for its efficiency and  fast convergence, and robustness
+to various types of neural network architectures and problem domains.
+
+The optimization procedure performed by Adam is as follows:
+\begin{enumerate}
+    \item Initialize 2 moving average accumulators, $m$ and $v$ with 0.
+          They will store the exponentially decaying average of past gradients
+          and squared gradients respectively for each parameter $\theta$
+    \item At each iteration, compute the gradient of the loss function with
+          respect to the parameters, $\nabla_{\theta} \mathcal{L}(\theta_t)$
+    \item Update the moving averages $m$ and $v$ as follows:
+          \begin{align*}
+              m & = \beta_1 m + (1 - \beta_1) \nabla_{\theta} \mathcal{L}(\theta_t)   \\
+              v & = \beta_2 v + (1 - \beta_2) \nabla_{\theta} \mathcal{L}(\theta_t)^2
+          \end{align*}
+          where $\beta_1$ and $\beta_2$ are the hyperparameters that control the decay rate of the moving averages.
+          The usual values for $\beta_1$ and $\beta_2$ are 0.9 and 0.999 respectively.
+    \item Compute the bias-corrected moving averages $\hat{m}$ and $\hat{v}$ as follows:
+          \begin{align*}
+              \hat{m} & = \frac{m}{1 - \beta_1^t} \\
+              \hat{v} & = \frac{v}{1 - \beta_2^t}
+          \end{align*}
+          The bias correction is necessary because the moving averages are initialized with 0
+          (see original paper for derivations \cite{Kingma2014AdamAM}).
+    \item Update the network parameters as follows:
+          \begin{equation*}
+              \theta_{t+1}=\theta_t - \alpha \frac{\hat{m}}{\sqrt{\hat{v}} + \epsilon}
+          \end{equation*}
+          where $\epsilon$ is a small constant used for numerical stability
+          (i.e., to avoid division by zero).
+
+          The update is similar to the gradient descent update rule (Equation \ref{eq:gradient_descent})
+          except that the gradient is divided by the square root of the moving average of squared gradients.
+\end{enumerate}
+
+We found that the optimizer with default parameters ($\beta_1$ and $\beta_2$) works well for our task, and we did not experiment
+with other optimizers.
+
 
 \subsubsection{Learning rate finder} \label{sec:learning_rate_finder}
-% describe learning rate finder
+
 The learning rate $\alpha$ is one of the most important hyperparameters that determines the step size in parameter space
 during gradient descent optimization. An appropriate learning rate is essential for
 model convergence.
@@ -1241,7 +1290,7 @@ are updated more smoothly.
 \subsubsection{Class imbalance and loss functions} \label{sec:class_imbalance}
 
 In anomaly detection task the dataset is often imbalanced, i.e., the number of normal samples
-is much larger than the number of anomalous samples.
+is much larger than the number of anomalous samples (see Section \ref{sec:datasets}).
 
 This poses a problem for the training of the model because the model can simply learn to predict
 the majority class (i.e., normal samples) and achieve a high accuracy without having
@@ -1275,9 +1324,8 @@ While the base transformer encoder architecture uses layer normalization and pos
 we found that they lead to unstable training and worse performance of the model on most
 of the datasets. Hence, we disabled them for the experiments and replaced them with
 identity layers.
-% TODO: maybe just add plots with the loss here?
 
-\section{Datasets}
+\section{Datasets} \label{sec:datasets}
 
 In this section, the datasets used for model training and performance evaluation will be described.
 
@@ -1293,10 +1341,13 @@ for anomaly detection in time series and because it has a large number of labele
 A sample time series of NYC taxi demand is presented in Figure \ref{fig:NAB_example_nyc_taxi}.
 \begin{figure}[h!]
     \centering
-    \includegraphics[scale=0.48]{NAB_example_nyc_taxi.png}
-    \caption{NYC Taxi demand - anomalies highlighted in red}
+    \includegraphics[width=\textwidth]{NAB_example_nyc_taxi.png}
+    \caption{NYC Taxi demand - anomalies highlighted in red. Left: Time series of observations, Right: Distribution of observations.}
     \label{fig:NAB_example_nyc_taxi}
 \end{figure}
+
+In this work, we only used the NYC taxi demand dataset as in the \cite{tuli2022tranad}.
+The dataset consists of 10320 samples with 10\% of anomalous samples.
 
 \subsection{KPI Anomaly Detection Dataset}
 
@@ -1311,12 +1362,12 @@ and number of connection errors. Machine KPIs are performance indicators that re
 the health of the machine (server, router, switch), such as CPU utilization, memory utilization,
 disk IO and network card throughput.
 
-A sample time series of a sensor readings is presented in Figure \ref{fig:NAB_example_nyc_taxi}.
+A sample time series of a sensor readings is presented in Figure \ref{fig:KPIAIOps_example}.
 We can clearly see the outliers for some of the observations (colored in red).
 \begin{figure}[h!]
     \centering
-    \includegraphics[scale=0.48]{KPIAIOps_example.png}
-    \caption{Sensor data from a machine in a data center. The red dots indicate the anomalies.}
+    \includegraphics[width=\textwidth]{KPIAIOps_example.png}
+    \caption{Sensor data from a machine in a data center. The red dots indicate the anomalies. Left: Time series of observations, Right: Distribution of observations.}
     \label{fig:KPIAIOps_example}
 \end{figure}
 
@@ -1356,8 +1407,6 @@ An example of the injected outliers is presented in Figure \ref{fig:FI2010_examp
 
 \section{Accuracy}
 
-% TODO: maybe add citations? or is it a common knowledge
-
 In this section, we will describe the main metrics used to evaluate the performance of the anomaly detection models.
 The Transformer encoder model will be compared with the simple linear regression model on handcrafted features
 and with the Linear Transformer model \cite{2006.16236}.
@@ -1367,6 +1416,8 @@ The inference procedure will be described and the results will be presented.
 After training the model on the training set as described in Section \ref{sec:training}, we can use the model to make predictions on the test set.
 
 \subsection{Metrics} \label{sec:metrics}
+
+% TODO: maybe add citations? but I think it is a common knowledge...
 
 In this section the metrics used to evaluate the performance of the anomaly detection models will be described.
 
