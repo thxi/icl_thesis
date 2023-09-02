@@ -132,10 +132,6 @@ The work contained in this thesis is my own work unless otherwise stated.
 \listoftables
 
 
-
-
-
-
 % %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 % \begin{remark}
 % Please bear in mind the following when writing your thesis (or anything for that matter):
@@ -193,7 +189,11 @@ architectures.
 
 \section*{Outline of the thesis.}
 
-% TODO
+In Chapter \ref{sec:problem_statement}, we will describe the problem statement of anomaly detection task.
+In Chapter \ref{sec:transformers}, we will describe the main concepts and ideas used in the Transformer architecture.
+In Chapter \ref{sec:fpga_design}, we will describe the main concepts of programming an FPGA and the specific optimizations that can be applied to speed up the computations.
+In Chapter \ref{sec:experiments}, we will describe the experiments that we conducted to evaluate the performance of the proposed architectures.
+Chapter \ref{sec:conclusion} will conclude the thesis and will provide some ideas for future work.
 
 
 \section*{Contributions}
@@ -209,7 +209,7 @@ The main contributions of this paper are as follows:
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
-\chapter{Problem statement}
+\chapter{Problem statement} \label{sec:problem_statement}
 
 In this chapter, we will describe the problem statement of anomaly detection task.
 
@@ -295,7 +295,7 @@ but to show that it can be efficiently implemented on an FPGA board.
 \end{figure}
 
 
-\chapter{Transformers}
+\chapter{Transformers} \label{sec:transformers}
 
 In this chapter, we will describe the main concepts and ideas used in the Transformer architecture.
 and how to use them for anomaly detection time series task.
@@ -316,7 +316,7 @@ of recurrent and convolutional layers.
     \label{fig:attention_is_all_you_need}
 \end{figure}
 
-Figure \ref{fig:attention_is_all_you_need} presents the main architecture of the transformer.
+Figure \ref{fig:attention_is_all_you_need} presents the main architecture of the Transformer.
 The architecture consists of an \textbf{encoder} and a \textbf{decoder} blocks.
 For the purpose of the thesis we will only consider the \textbf{encoder} part of the architecture
 (and in that regard the idea is similar to BERT model for language processing \cite{Devlin2019BERTPO}
@@ -514,10 +514,6 @@ using the not so specialized architectures is that we want to show that the Tran
 can achieve good out of the box performance on the anomaly detection task with minimal
 tuning and that it can be efficiently implemented on an FPGA board.
 
-\section{Why Transformers for FPGA}
-
-% maybe not needed here and can just add to the bottom
-
 \chapter{FPGA design} \label{sec:fpga_design}
 
 In this section, the main concepts of programming an FPGA will be introduced
@@ -525,7 +521,7 @@ and the specific optimizations that can be applied to speed up the
 computations.
 
 Readers will be introduced to the common optimization techniques and how they
-are achieved. An matrix multiplication example will be provided to illustrate the concepts and
+are achieved. A matrix multiplication example will be provided to illustrate the concepts and
 how the optimizations affect the latency and resource utilization.
 
 Lastly, the analysis of the specific optimizations that can be applied to the Transformer architecture
@@ -1103,14 +1099,14 @@ use \texttt{loop\_j} pipelining for matrices, fully unroll the loops for ReLU ac
     Vitis HLS could not infer the partitioning automatically.
 \end{remark}
 
-The optimized version achieves 2986 cycles (29.86 microseconds) latency and utilizes 18\% BRAM, 43\% FFs and 100\% LUTs
+The optimized version achieves 2986 cycles (29.86 microseconds) latency and utilizes 18\% BRAM, 43\% FFs and 99\% LUTs
 \newline
 The full report is in \texttt{vitis\_hls/linear\_transformer/csynth.rpt}.
 
 For comparison, the architecture with all optimization turned off reaches latency of 68894 cycles (688.94 microseconds) and utilizes 17\% BRAM, 6\% FFs and 24\% LUTs.
 The full report is in \texttt{vitis\_hls/linear\_transformer\_slow/csynth.rpt}.
 
-\chapter{Experiments}
+\chapter{Experiments} \label{sec:experiments}
 
 In this section, we will describe the experiments that were performed to evaluate the performance of the proposed architecture.
 While the main focus of this work is the inference performance of the models (refer to Section \ref{sec:performance}),
@@ -1538,27 +1534,53 @@ In this paper, we will use the following metrics to compare the performance of t
     \centering
     \begin{tabular}{|c|c|c|c|c|c|}
         \hline
-        Model              & Dataset & Accuracy  & Precision & Recall    & F1        \\
+        Dataset & Model              & Accuracy  & Precision & Recall    & F1        \\
         \hline
-        Linear Regression  & KPI     & 0.61/0.66 & 0.07/0.15 & 0.73/0.69 & 0.12/0.25 \\
-                           & NAB     & 0.09/0.20 & 0.09/0.20 & 1.00/1.00 & 0.16/0.33 \\
-                           & FI2010 & 0.14/0.16 & 0.14/0.16 & 1.00/1.00 & 0.24/0.27 \\
+        KPI     & Linear Regression  & 0.61/0.66 & 0.07/0.15 & 0.73/0.69 & 0.12/0.25 \\
+                & Transformer        & 0.98/0.97 & 0.89/0.95 & 0.59/0.63 & 0.71/0.76 \\
+                & Linear Transformer & 0.97/0.95 & 0.58/0.73 & 0.62/0.69 & 0.60/0.71 \\
         \hline
-        Transformer        & KPI     & 0.98/0.97 & 0.89/0.95 & 0.59/0.63 & 0.71/0.76 \\
-                           & NAB     & 0.76/0.75 & 0.16/0.41 & 0.39/0.55 & 0.23/0.47 \\
-                           & FI2010 & 0.84/0.80 & 0.17/0.21 & 0.03/0.11 & 0.06/0.14\\
+        NAB     & Linear Regression  & 0.09/0.20 & 0.09/0.20 & 1.00/1.00 & 0.16/0.33 \\
+                & Transformer        & 0.76/0.75 & 0.16/0.41 & 0.39/0.55 & 0.23/0.47 \\
+                & Linear Transformer & 0.53/0.56 & 0.13/0.27 & 0.76/0.71 & 0.22/0.40 \\
         \hline
-        Linear Transformer & KPI     & 0.97/0.95 & 0.58/0.73 & 0.62/0.69 & 0.60/0.71 \\
-                           & NAB     & 0.53/0.56 & 0.13/0.27 & 0.76/0.71 & 0.22/0.40 \\
-                           & FI2010 & 0.82/0.77 & 0.15/0.14 & 0.06/0.09 & 0.09/0.11 \\
+        FI2010  & Linear Regression  & 0.14/0.16 & 0.14/0.16 & 1.00/1.00 & 0.24/0.27 \\
+                & Transformer        & 0.84/0.80 & 0.17/0.21 & 0.03/0.11 & 0.06/0.14 \\
+                & Linear Transformer & 0.82/0.77 & 0.15/0.14 & 0.06/0.09 & 0.09/0.11 \\
         \hline
     \end{tabular}
     \caption{Final metrics. The reported value are for the train and validation set.}
     \label{tab:final_metrics}
 \end{table}
 
+% the same table as above but dataset column is after the model
+% but I think the above table style is better
+% \begin{table}[h!]
+%     \centering
+%     \begin{tabular}{|c|c|c|c|c|c|}
+%         \hline
+%         Model              & Dataset & Accuracy  & Precision & Recall    & F1        \\
+%         \hline
+%         Linear Regression  & KPI     & 0.61/0.66 & 0.07/0.15 & 0.73/0.69 & 0.12/0.25 \\
+%                            & NAB     & 0.09/0.20 & 0.09/0.20 & 1.00/1.00 & 0.16/0.33 \\
+%                            & FI2010  & 0.14/0.16 & 0.14/0.16 & 1.00/1.00 & 0.24/0.27 \\
+%         \hline
+%         Transformer        & KPI     & 0.98/0.97 & 0.89/0.95 & 0.59/0.63 & 0.71/0.76 \\
+%                            & NAB     & 0.76/0.75 & 0.16/0.41 & 0.39/0.55 & 0.23/0.47 \\
+%                            & FI2010  & 0.84/0.80 & 0.17/0.21 & 0.03/0.11 & 0.06/0.14 \\
+%         \hline
+%         Linear Transformer & KPI     & 0.97/0.95 & 0.58/0.73 & 0.62/0.69 & 0.60/0.71 \\
+%                            & NAB     & 0.53/0.56 & 0.13/0.27 & 0.76/0.71 & 0.22/0.40 \\
+%                            & FI2010  & 0.82/0.77 & 0.15/0.14 & 0.06/0.09 & 0.09/0.11 \\
+%         \hline
+%     \end{tabular}
+%     \caption{Final metrics. The reported value are for the train and validation set.}
+%     \label{tab:final_metrics}
+% \end{table}
+
+
 The final metrics for the models are presented in Table \ref{tab:final_metrics}.
-Refer to the Appendix \ref{app:training_plots} for the training plots for the models.
+Refer to Appendix \ref{app:training_plots} for the training plots for the models.
 
 The Transformer model outperforms the other models on all datasets. And that
 is expected because the Transformer model is more complex (i.e., has more parameters)
@@ -1581,52 +1603,129 @@ as long as there is no gradient explosion problem.
 
 \textbf{In short}, Transformer models outperform the simple linear regression
 but can have unstable training. Linear Transformer model is slightly behind
-the vanilla model.
+the vanilla model. This which shows that untuned Transformer models
+provide a better baseline for anomaly detection than the simple linear regression model.
 
 % TODO: maybe expand, but probably that's the main takeaway
 
 \section{Performance/Speed} \label{sec:performance}
 
-% https://xilinx.github.io/Vitis-Tutorials/2021-2/build/html/docs/Getting_Started/Vitis_HLS/dataflow_design.html
+The performance of FPGA implementation of the models will be compared with the
+pytorch CPU and GPU implementation of the models.
+The CPU used for the experiments is Intel(R) Core(TM) i7-8750H CPU @ 2.20GHz clocked
+to 4.20GHz and the GPU is NVIDIA GeForce GTX 1050 Ti.
+The latency on CPU and GPU was measured empirically by running the inference
+multiple times (10,000 runs).
+Refer to the Appendix \ref{app:empirical_latency} for the histograms of
+inference times.
 
-% why pynq has additional latency
-% https://discuss.pynq.io/t/execution-time-in-pynq-z2/2833
-% https://discuss.pynq.io/t/execution-time-calculation/1959
-% In pipeline designs there are two key concepts
-% Initiation Interval (II), the number of clock cycles between the start times of consecutive loop iterations, ideally this should be 1
-% Latency, the time it takes to get an output since the input was fed
+% see notebook/get_metrics_table-Copy1.ipynb
+\begin{table}[h]
+    \centering
+    \begin{tabular}{|c|c|c|}
+        \hline
+        Model             & Device & Inference time (microseconds) \\
+        \hline
+        Transformer       & CPU    & 353.35(113.50)                \\
+                          & GPU    & 626.34(323.18)                \\
+                          & FPGA   & 37.14                         \\
+        \hline
+        LinearTransformer & CPU    & 365(114.21)                   \\
+                          & GPU    & 472.44(110.83)                \\
+                          & FPGA   & 29.86                         \\
+        \hline
+    \end{tabular}
+    \caption{Inference time for the models on different devices.
+        For CPU and GPU we report the mean and standard deviation.
+        For FPGA, the deterministic latency is reported (see Section \ref{sec:transformer_optimizations}).
+    }
+    \label{tab:inference_time}
+\end{table}
+
+According to the results (Table \ref{tab:inference_time}), the FPGA implementation of the models outperforms
+the CPU implementation by a large margin (achieving a speedup of 10x).
+The reason for this is that the FPGA implementation is highly parallelized
+compared to the CPU implementation.
+Moreover, the benefit of using the FPGA implementation is that it has deterministic
+latency (i.e., the inference time is constant) which is not the case for the CPU and GPU implementation
+where the inference time varies depending on the load of the CPU/GPU (see the
+standard deviation for the inference times of CPU and GPU).
+
+\begin{remark}
+    The GPU implementation of the models is \textit{empirically} slower than the CPU implementation.
+    This is because the models are small and the overhead of transferring the data
+    to the GPU is larger than the time it takes to perform the inference on the CPU
+    for a single sample.
+\end{remark}
+
+Regarding the resource utilization, the Linear Transformer model uses more resources
+than the Transformer model (see Table \ref{tab:resource_utilization}) and achieves
+a slightly better runtime performance (see Table \ref{tab:inference_time}).
 
 
-
-\section{Resource utilization on FPGA}
-
-% TODO: write about inferred pragmas
-
-% TODO: describe numerically stable softmax: https://blester125.com/blog/softmax.html
-% also reference the transformer architecture which also mentions it
-
-% TODO:
-% describe tht cannot pipeline or unroll relu
-% because eats many resources
+% see section for FPGA above for the numbers or the synthesis reports
+\begin{table}[h]
+    \centering
+    \begin{tabular}{|c|c|c|c|}
+        \hline
+        Model             & BRAM & FF   & LUT  \\
+        \hline
+        Transformer       & 5\%  & 30\% & 90\% \\
+        \hline
+        LinearTransformer & 18\% & 43\% & 99\% \\
+        \hline
+    \end{tabular}
+    \caption{Relative resource utilization for the PYNQ-Z2 board.}
+    \label{tab:resource_utilization}
+\end{table}
 
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 \newpage
-\chapter*{Conclusion}
+\chapter{Conclusion} \label{sec:conclusion}
 
-\section{Summary}
+\section*{Summary}
 
-% TODO: go through the work and see if you missed something
-% just a very short draft with ideas for now
-There are different optimizations: they have performance-resource utilization tradeoffs.
-For optimal design that fits the board (in terms of resource utilization),
-you need to tweak certain parts of algorithms (for example, performing loop
-reordering instead of pipelining, see Section \ref{sec:mm_loop_reordering}).
+In this work, we have examined the performance of the Transformer model
+for the anomaly detection task and how it can be effectively implemented on
+FPGA.
 
-\section{Future work}
-Trying bigger FPGA boards for maximum performance (e.g., loop pipelining as in Section \ref{sec:loop_pipelining_unrolling}).
+We have shown how different Transformer Architectures (and especially the attention module)
+affect the performance of the model both in terms of accuracy and inference speed.
+It was shown that the Transformer model outperforms the simple linear regression model
+without too much hyperparameter tuning. The only downside of the Transformer model
+that was observed was the unstable training which can be partially remediated
+by using gradient clipping.
 
-Evaluation of performance on more recent \textbf{labeled} financial market data.
+We have also demonstrated how different optimizations affect the performance
+and resource utilization of the model on FPGA.
+We also provided an optimized implementation of the Transformer model on FPGA
+which can be used as a reference.
+
+This work can be used as a starting point for further research on the topic of
+anomaly detection using Transformer models and for further research on the topic
+of efficient implementation of Transformer models on FPGA in different domains
+(e.g., natural language processing).
+
+
+\section*{Future work}
+For future work, we propose the following:
+\begin{enumerate}
+    \item To try bigger FPGA boards to push the limit of maximum performance.
+          The current implementations hit the limit of the PYNQ-Z2 board.
+    \item To evaluate the performance on more recent \textbf{labeled} financial market data.
+          Currently, there is no publicly available labeled financial market dataset
+          with anomalies. The FI2010 dataset is not labeled and we had to inject synthetic anomalies.
+    \item To evaluate the performance Transformer on FPGA board for other tasks (e.g., natural language processing).
+          The current implementation is only for the anomaly detection task.
+          The other domains might involve a slightly different architecture
+          (e.g., different number of layers, different number of heads, etc.),
+          it can be valuable to have those models on edge devices because of their
+          recent surge in popularity and increased use.
+          Currently, the language models are too big to fit on the FPGA board (especially, PYNQ-Z2),
+          however, the smaller models can still be implemented and evaluated on bigger boards..
+\end{enumerate}
+
 
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
@@ -1683,6 +1782,39 @@ Evaluation of performance on more recent \textbf{labeled} financial market data.
     \label{fig:LinearRegression_NAB_training}
 \end{figure}
 
+\chapter{Empirical latency} \label{app:empirical_latency}
+
+% Transformer CPU
+\begin{figure}[h!]
+    \centering
+    \caption{Empirical latency for Transformer model on CPU.}
+    \includegraphics[width=\textwidth]{etc/transformer_cpu_latency.pdf}
+    \label{fig:transformer_cpu_latency}
+\end{figure}
+
+% Transformer GPU
+\begin{figure}[h!]
+    \centering
+    \caption{Empirical latency for Transformer model on GPU.}
+    \includegraphics[width=\textwidth]{etc/transformer_gpu_latency.pdf}
+    \label{fig:transformer_gpu_latency}
+\end{figure}
+
+% Linear Transformer CPU
+\begin{figure}[h!]
+    \centering
+    \caption{Empirical latency for Linear Transformer model on CPU.}
+    \includegraphics[width=\textwidth]{etc/linear_transformer_cpu_latency.pdf}
+    \label{fig:linear_transformer_cpu_latency}
+\end{figure}
+
+% Linear Transformer GPU
+\begin{figure}[h!]
+    \centering
+    \caption{Empirical latency for Linear Transformer model on GPU.}
+    \includegraphics[width=\textwidth]{etc/linear_transformer_gpu_latency.pdf}
+    \label{fig:linear_transformer_gpu_latency}
+\end{figure}
 
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
