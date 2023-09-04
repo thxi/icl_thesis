@@ -228,9 +228,9 @@ one can also create features (for example, by calculating the \textbf{difference
 on the original time-series to get a multivariate time-series.
 
 \begin{definition}
-    The \textbf{differenced time series} is a time-series $\mathcal{T}$ where each observation $x_i$ is simply the difference
+    The \textbf{differenced time series} is a time-series $\mathcal{T}$ where each observation $\hat{x}_i$ is simply the difference
     between the current and the previous observation.
-    That is, $x_i=x_{i-1}-x_i$.
+    That is, $\hat{x}_i=x_{i-1}-x_i$.
 \end{definition}
 
 \begin{figure}[h!]
@@ -1143,7 +1143,7 @@ The transformer hyperparameters used for the experiments are presented in Table 
         Parameter, Model            & Transformer Encoder & Linear Transformer Encoder \\
         \hline
         Window Size                 & 8                   & 8                          \\
-        Number of heads             & 8                   & -                          \\
+        Number of heads             & 2                   & -                          \\
         Dim. of FeedForward network & 16                  & 16                         \\
         Number of blocks            & 2                   & 1                          \\
         \hline
@@ -1244,11 +1244,11 @@ The procedure is performed as follows:
 \begin{enumerate}
     \item Start with a very small learning rate $\alpha$ and increase it at each iteration
     \item At each iteration, train the model for a few epochs and compute the loss function
-    \item Plot the loss function against the learning rate
+    \item Plot the loss function against the learning rate.
           This plot is crucial in identifying the "sweet spot" in the learning rate range
-          where the loss is decreasing effectively.
+          where the loss is decreasing effectively (i.e., in the most steeper way).
     \item Choose the point on the learning rate vs. loss curve where the
-          loss starts to decrease most steeply.  This point indicates that the model
+          loss starts to decrease most steeply. This point indicates that the model
           is making the most significant progress towards convergence.
 \end{enumerate}
 
@@ -1417,9 +1417,6 @@ In this section, we will describe the main metrics used to evaluate the performa
 The Transformer encoder model will be compared with the simple linear regression model on handcrafted features
 and with the Linear Transformer model \cite{2006.16236}.
 The inference procedure will be described and the results will be presented.
-
-\subsection{Inference}
-After training the model on the training set as described in Section \ref{sec:training}, we can use the model to make predictions on the test set.
 
 \subsection{Metrics} \label{sec:metrics}
 
